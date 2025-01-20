@@ -1,9 +1,10 @@
 fileFormatVersion: 2
-guid: f7857f04030f5dc448ccb211f6dc45f5
+guid: d130b992e98e3864f992ff80e6b12db3
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - emissiveSphereMaterial: {fileID: 2100000, guid: 66bbb5e7db121c940a96f20096662e57, type: 2}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 
