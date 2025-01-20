@@ -216,6 +216,34 @@ public class SceneController : MonoBehaviour
             lightSphere.SetIntensity(intensity);
     }
 
+    // Emotion to light color mapping
+    public void ShowColouredLight(string type)
+    {
+        if (!isInitialized) return;
+        
+        switch (type.ToLower())
+        {
+            case "happy":
+                ShowPinkLight();
+                break;
+            case "sad":
+                ShowBlueLight();
+                break;
+            case "surprised":
+                ShowYellowLight();
+                break;
+            case "scared":
+                ShowGreyLight();
+                break;
+            case "angry":
+                ShowRedLight();
+                break;
+            default:
+                Debug.LogWarning($"Unknown colour type: {type}");
+                break;
+        }
+    }
+
     public void SetLightTransparency(float transparency)
     {
         if (!isInitialized) return;

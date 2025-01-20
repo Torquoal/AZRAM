@@ -21,9 +21,9 @@ public class LightEmissionSphere : MonoBehaviour
     public static readonly Color PresetRed = new Color(0.45f, 0.03f, 0.0f);
     public static readonly Color PresetBlue = new Color(0.01f, 0.0f, 0.34f);
     public static readonly Color PresetGreen = new Color(0.2f, 1f, 0.4f);
-    public static readonly Color PresetYellow = new Color(1f, 0.9f, 0.2f);
+    public static readonly Color PresetYellow = new Color(0.7f, 0.6f, 0.0f);
     public static readonly Color PresetPurple = new Color(0.8f, 0.2f, 1f);
-    public static readonly Color PresetPink = new Color(0.5f, 0.0f, 0.5f);
+    public static readonly Color PresetPink = new Color(0.6f, 0.0f, 0.5f);
     public static readonly Color PresetGrey = new Color(0.5f, 0.5f, 0.5f);
 
     // Public property to access current color

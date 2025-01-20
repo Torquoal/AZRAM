@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using TMPro;
+using System.Linq;
 
 public class ThoughtBubbleController : MonoBehaviour
 {
@@ -30,8 +31,43 @@ public class ThoughtBubbleController : MonoBehaviour
 
     void Start()
     {
+        Debug.Log("ThoughtBubbleController Start called");
+        
+        // Validate thought sprites
+        if (thoughtSprites != null)
+        {
+            Debug.Log($"Number of thought sprites: {thoughtSprites.Length}");
+            for (int i = 0; i < thoughtSprites.Length; i++)
+            {
+                if (thoughtSprites[i] == null)
+                {
+                    Debug.LogError($"Thought sprite at index {i} is null!");
+                }
+                else
+                {
+                    Debug.Log($"Sprite {i}: {thoughtSprites[i].name}");
+                }
+            }
+        }
+        
         // Find the camera rig - adjust the path based on your hierarchy
-        cameraRig = GameObject.Find("Camera Rig").transform;
+        GameObject cameraRigObject = GameObject.Find("Camera Rig");
+        if (cameraRigObject == null)
+        {
+            Debug.LogError("Camera Rig not found!");
+        }
+        else
+        {
+            Debug.Log("Camera Rig found successfully");
+            cameraRig = cameraRigObject.transform;
+        }
+        
+        // Check if all required components are assigned
+        if (mainBubble == null) Debug.LogError("Main Bubble not assigned!");
+        if (smallBubble1 == null) Debug.LogError("Small Bubble 1 not assigned!");
+        if (smallBubble2 == null) Debug.LogError("Small Bubble 2 not assigned!");
+        if (thoughtImage == null) Debug.LogError("Thought Image not assigned!");
+        if (thoughtSprites == null || thoughtSprites.Length == 0) Debug.LogError("No thought sprites assigned!");
         
         // Store initial positions for floating animation
         initialPositions = new Vector3[3];
@@ -39,42 +75,80 @@ public class ThoughtBubbleController : MonoBehaviour
         initialPositions[1] = smallBubble1.transform.localPosition;
         initialPositions[2] = smallBubble2.transform.localPosition;
 
+        Debug.Log($"Initial positions stored: Main={initialPositions[0]}, Small1={initialPositions[1]}, Small2={initialPositions[2]}");
+
         // Initially hide all bubbles
         SetBubblesVisible(false);
     }
 
     void LateUpdate()
     {
-        if (cameraRig != null)
+        // Always face the main camera
+        Camera mainCamera = Camera.main;
+        if (mainCamera != null)
         {
-            // Make the canvas face the camera
-            transform.LookAt(cameraRig.position);
-            transform.Rotate(0, 180, 0); // Correct the rotation
+            Vector3 directionToCamera = mainCamera.transform.position - transform.position;
+            directionToCamera.y = 0; // Keep upright by zeroing out y component
+            
+            if (directionToCamera != Vector3.zero)
+            {
+                Quaternion targetRotation = Quaternion.LookRotation(-directionToCamera.normalized, Vector3.up);
+                // Smoothly interpolate the rotation for smoother movement
+                transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * 10f);
+            }
         }
     }
 
     public void ShowThought(string emotion)
     {
+        Debug.Log($"ShowThought called with emotion: {emotion}");
+        
+        // Validate sprites array
+        if (thoughtSprites == null)
+        {
+            Debug.LogError("thoughtSprites array is null!");
+            return;
+        }
+        
+        if (thoughtSprites.Length == 0)
+        {
+            Debug.LogError("thoughtSprites array is empty!");
+            return;
+        }
+        
         // Find the appropriate sprite based on emotion
         Sprite thoughtSprite = null;
         for (int i = 0; i < thoughtSprites.Length; i++)
         {
+            if (thoughtSprites[i] == null)
+            {
+                Debug.LogError($"Sprite at index {i} is null!");
+                continue;
+            }
+            
             if (thoughtSprites[i].name.ToLower().Contains(emotion.ToLower()))
             {
                 thoughtSprite = thoughtSprites[i];
+                Debug.Log($"Found sprite: {thoughtSprites[i].name}");
                 break;
             }
         }
 
         if (thoughtSprite != null)
         {
+            Debug.Log("Setting sprite and showing bubble sequence");
             thoughtImage.sprite = thoughtSprite;
             ShowBubbleSequence();
+        }
+        else
+        {
+            Debug.LogWarning($"No sprite found for emotion: {emotion}. Available sprites: {string.Join(", ", thoughtSprites.Select(s => s.name))}");
         }
     }
 
     private void ShowBubbleSequence()
     {
+        Debug.Log($"ShowBubbleSequence called. isVisible: {isVisible}");
         if (!isVisible)
         {
             StopAllCoroutines();
@@ -141,31 +215,52 @@ public class ThoughtBubbleController : MonoBehaviour
 
     private IEnumerator FloatBubbles()
     {
+        Debug.Log("Started floating animation");
         float[] timeOffsets = { 0f, 0.33f, 0.66f }; // Different starting points for each bubble
+        float startTime = Time.time;
+        
+        // Store the original positions when the floating starts
+        Vector3 mainOriginal = mainBubble.transform.localPosition;
+        Vector3 small1Original = smallBubble1.transform.localPosition;
+        Vector3 small2Original = smallBubble2.transform.localPosition;
+        
+        Debug.Log($"Starting float animation from positions: Main={mainOriginal}, Small1={small1Original}, Small2={small2Original}");
         
         while (true)
         {
-            float time = Time.time * floatSpeed;
+            float time = (Time.time - startTime) * floatSpeed;
             
-            // Float main bubble
-            mainBubble.transform.localPosition = initialPositions[0] + new Vector3(
-                Mathf.Sin(time + timeOffsets[0]) * floatAmount,
-                Mathf.Cos(time + timeOffsets[0]) * floatAmount,
+            // Larger movement for main bubble
+            Vector3 mainOffset = new Vector3(
+                Mathf.Sin(time + timeOffsets[0]) * floatAmount * 20f,
+                Mathf.Cos(time * 0.8f + timeOffsets[0]) * floatAmount * 15f,
                 0f
             );
+            mainBubble.transform.localPosition = mainOriginal + mainOffset;
             
-            // Float small bubbles
-            smallBubble1.transform.localPosition = initialPositions[1] + new Vector3(
-                Mathf.Sin(time + timeOffsets[1]) * floatAmount * 0.7f,
-                Mathf.Cos(time + timeOffsets[1]) * floatAmount * 0.7f,
+            // Medium movement for middle bubble
+            Vector3 small1Offset = new Vector3(
+                Mathf.Sin(time * 1.1f + timeOffsets[1]) * floatAmount * 15f,
+                Mathf.Cos(time * 0.9f + timeOffsets[1]) * floatAmount * 12f,
                 0f
             );
+            smallBubble1.transform.localPosition = small1Original + small1Offset;
             
-            smallBubble2.transform.localPosition = initialPositions[2] + new Vector3(
-                Mathf.Sin(time + timeOffsets[2]) * floatAmount * 0.5f,
-                Mathf.Cos(time + timeOffsets[2]) * floatAmount * 0.5f,
+            // Smaller movement for smallest bubble
+            Vector3 small2Offset = new Vector3(
+                Mathf.Sin(time * 1.2f + timeOffsets[2]) * floatAmount * 10f,
+                Mathf.Cos(time + timeOffsets[2]) * floatAmount * 8f,
                 0f
             );
+            smallBubble2.transform.localPosition = small2Original + small2Offset;
+            
+            // Log positions occasionally to verify movement
+            if (Time.frameCount % 100 == 0)
+            {
+                Debug.Log($"Current positions - Main: {mainBubble.transform.localPosition}, " +
+                         $"Small1: {smallBubble1.transform.localPosition}, " +
+                         $"Small2: {smallBubble2.transform.localPosition}");
+            }
             
             yield return null;
         }
