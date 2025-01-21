@@ -272,7 +272,7 @@ public class LightEmissionSphere : MonoBehaviour
                 
                 if (Time.frameCount % 60 == 0)
                 {
-                    Debug.Log($"Current scale: {currentScale}, Target: {targetScale}");
+                    //Debug.Log($"Current scale: {currentScale}, Target: {targetScale}");
                 }
             }
 

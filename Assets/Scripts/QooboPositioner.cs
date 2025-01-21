@@ -8,10 +8,11 @@ public class QooboPositioner : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private GameObject qooboMesh;
+    [SerializeField] private SceneController sceneController;
     
     [Header("Settings")]
-    [SerializeField] private float positionSmoothTime = 0.1f; // Smoothing time for position updates
-    [SerializeField] private float handHeightOffset = 0.1f; // Offset above hand position
+    [SerializeField] private float handHeightOffset = -0.1f; // Offset BELOW hand position (negative value)
+    [SerializeField] private float handForwardOffset = 0.2f; // Offset FORWARD from hand position
     [SerializeField] private float pinchThreshold = 0.02f; // How close fingers need to be for pinch
     
     [Header("Debug")]
@@ -19,7 +20,6 @@ public class QooboPositioner : MonoBehaviour
     
     private bool isPositioned = false;
     private bool isRepositioning = false;
-    private Vector3 velocityRef;
     private XRHandSubsystem handSubsystem;
 
     void Start()
@@ -27,6 +27,13 @@ public class QooboPositioner : MonoBehaviour
         if (qooboMesh == null)
         {
             Debug.LogError("QooboMesh reference not set in QooboPositioner!");
+            enabled = false;
+            return;
+        }
+
+        if (sceneController == null)
+        {
+            Debug.LogError("SceneController reference not set in QooboPositioner!");
             enabled = false;
             return;
         }
@@ -50,17 +57,27 @@ public class QooboPositioner : MonoBehaviour
     {
         if (handSubsystem == null) return;
 
-        // For testing in editor with new Input System
-        if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-        {
-            if (showDebugLogs) Debug.Log("Reposition key pressed");
-            ToggleRepositioning();
-            return;
-        }
-
         // Check if both hands are tracked
         bool leftHandTracked = handSubsystem.leftHand.isTracked;
         bool rightHandTracked = handSubsystem.rightHand.isTracked;
+
+        if (showDebugLogs)
+        {
+            Debug.Log($"Current states - isPositioned: {isPositioned}, isRepositioning: {isRepositioning}");
+            Debug.Log($"Hand tracking - Left: {leftHandTracked}, Right: {rightHandTracked}");
+        }
+
+        // Check for Space key using new Input System
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame && rightHandTracked)
+        {
+            Debug.Log("Space key pressed - Starting repositioning");
+            isRepositioning = true;
+            isPositioned = false;
+            UpdateQooboPosition();
+            // Reset states after space key positioning
+            isRepositioning = false;
+            isPositioned = false;  // Allow pinch to work again
+        }
 
         if (leftHandTracked && rightHandTracked)
         {
@@ -72,71 +89,92 @@ public class QooboPositioner : MonoBehaviour
             Vector3 leftThumbPos = leftThumbTip.TryGetPose(out Pose thumbPose) ? thumbPose.position : Vector3.zero;
             Vector3 leftIndexPos = leftIndexTip.TryGetPose(out Pose indexPose) ? indexPose.position : Vector3.zero;
             
-            bool isPinching = Vector3.Distance(leftThumbPos, leftIndexPos) < pinchThreshold;
-            if (isPinching && showDebugLogs)
+            float pinchDistance = Vector3.Distance(leftThumbPos, leftIndexPos);
+            bool isPinching = pinchDistance < pinchThreshold;
+            
+            if (showDebugLogs)
             {
-                Debug.Log("Pinch detected");
+                Debug.Log($"Pinch distance: {pinchDistance}, Threshold: {pinchThreshold}, IsPinching: {isPinching}");
             }
 
-            // Get right hand palm position for positioning
-            XRHandJoint rightPalm = handSubsystem.rightHand.GetJoint(XRHandJointID.Palm);
-            Vector3 rightPalmPosition = rightPalm.TryGetPose(out Pose palmPose) ? palmPose.position : Vector3.zero;
-
-            if (isPinching && rightPalmPosition != Vector3.zero)
+            if (isPinching)
             {
                 if (!isPositioned || isRepositioning)
                 {
-                    if (showDebugLogs) Debug.Log($"Positioning Qoobo at right palm position: {rightPalmPosition}");
-                    UpdateQooboPosition(rightPalmPosition);
+                    Debug.Log($"Pinch detected - Updating position (isPositioned: {isPositioned}, isRepositioning: {isRepositioning})");
+                    UpdateQooboPosition();
+                }
+                else
+                {
+                    Debug.Log("Pinch detected but position is locked");
                 }
             }
             else if (isRepositioning)
             {
                 // Lock in position when pinch is released
-                if (showDebugLogs) Debug.Log("Position locked");
+                Debug.Log("Pinch released - Locking position");
                 isRepositioning = false;
                 isPositioned = true;
             }
         }
-        else
-        {
-            if (showDebugLogs && (!leftHandTracked || !rightHandTracked))
-            {
-                Debug.Log($"Hand tracking status - Left: {leftHandTracked}, Right: {rightHandTracked}");
-            }
-        }
     }
 
-    private void UpdateQooboPosition(Vector3 targetPos)
+    public void UpdateQooboPosition()
     {
-        // Add height offset and smooth the movement
-        targetPos.y += handHeightOffset;
+        Debug.Log($"UpdateQooboPosition called - States before update: isPositioned: {isPositioned}, isRepositioning: {isRepositioning}");
+
+        if (handSubsystem == null || !handSubsystem.rightHand.isTracked) 
+        {
+            Debug.LogWarning("Cannot update position - right hand not tracked");
+            return;
+        }
+
+        // Get right hand palm position and rotation
+        XRHandJoint rightPalm = handSubsystem.rightHand.GetJoint(XRHandJointID.Palm);
+        if (!rightPalm.TryGetPose(out Pose palmPose))
+        {
+            Debug.LogWarning("Cannot update position - failed to get palm pose");
+            return;
+        }
+
+        Vector3 rightPalmPosition = palmPose.position;
+        Quaternion rightPalmRotation = palmPose.rotation;
+
+        if (rightPalmPosition == Vector3.zero)
+        {
+            Debug.LogWarning("Cannot update position - invalid palm position");
+            return;
+        }
+
+        // Calculate the position below and forward of the palm based on palm's orientation
+        Vector3 downDirection = rightPalmRotation * Vector3.down;
+        Vector3 forwardDirection = rightPalmRotation * Vector3.forward;
         
-        qooboMesh.transform.position = Vector3.SmoothDamp(
-            qooboMesh.transform.position,
-            targetPos,
-            ref velocityRef,
-            positionSmoothTime
-        );
-    }
+        // Apply both vertical and forward offsets
+        Vector3 targetPos = rightPalmPosition + (downDirection * Mathf.Abs(handHeightOffset)) + 
+                                              (forwardDirection * handForwardOffset);
+        
+        Vector3 oldPosition = qooboMesh.transform.position;
+        
+        // Instant position update
+        qooboMesh.transform.position = targetPos;
 
-    // Public method to start repositioning
-    public void StartRepositioning()
-    {
-        ToggleRepositioning();
-    }
-
-    private void ToggleRepositioning()
-    {
-        isRepositioning = !isRepositioning;
-        if (isRepositioning)
+        // Instant rotation update
+        Vector3 palmForward = rightPalmRotation * Vector3.forward;
+        palmForward.y = 0; // Zero out vertical component
+        if (palmForward != Vector3.zero)
         {
-            if (showDebugLogs) Debug.Log("Entering repositioning mode");
-            isPositioned = false;
+            qooboMesh.transform.rotation = Quaternion.LookRotation(palmForward, Vector3.up);
         }
+
+        Debug.Log($"Position updated - Old: {oldPosition}, New: {targetPos}, Movement delta: {Vector3.Distance(oldPosition, targetPos)}");
+        
+        // Notify SceneController to start wake up sequence
+        sceneController.StartWakeUpSequence();
+        
+        Debug.Log($"UpdateQooboPosition complete - States after update: isPositioned: {isPositioned}, isRepositioning: {isRepositioning}");
     }
 
-    // Public method to get positioning status
     public bool IsPositioned()
     {
         return isPositioned && !isRepositioning;

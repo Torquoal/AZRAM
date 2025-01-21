@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.InputSystem;
 
 public class SceneController : MonoBehaviour
 {
@@ -21,11 +22,23 @@ public class SceneController : MonoBehaviour
     private bool isVisible = false;
     private Coroutine fadeCoroutine;
     private bool isInitialized = false;
+    private bool isWakingUp = false;
+    private bool wasHoveringDuringWakeUp = false;
+    private GameObject hoveringObject = null;
 
     void Start()
     {
         // Wait a frame to ensure LightEmissionSphere is fully initialized
         StartCoroutine(InitializeLightSphere());
+    }
+
+    void Update()
+    {
+        // Check for R key using new Input System
+        //if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
+        //{
+        //    ResetCamera();
+        //}
     }
 
     private IEnumerator InitializeLightSphere()
@@ -179,9 +192,14 @@ public class SceneController : MonoBehaviour
     // Audio control methods
     public void PlaySound(string emotion)
     {
+        if (isWakingUp && emotion != "peep")
+        {
+            Debug.Log("Cannot play sound during wake-up sequence");
+            return;
+        }
         
         int index = 0;
-        string[] emotionArray = {"happy", "sad", "scared", "surprised", "angry"};
+        string[] emotionArray = {"happy", "sad", "scared", "surprised", "angry", "peep"};
 
         for (int i = 0; i < emotionArray.Length; i++)
         {
@@ -219,6 +237,12 @@ public class SceneController : MonoBehaviour
     // Emotion to light color mapping
     public void ShowColouredLight(string type)
     {
+        if (isWakingUp)
+        {
+            Debug.Log("Cannot show light during wake-up sequence");
+            return;
+        }
+
         if (!isInitialized) return;
         
         switch (type.ToLower())
@@ -268,6 +292,12 @@ public class SceneController : MonoBehaviour
     // Thought bubble methods
     public void ShowThought(string emotion)
     {
+        if (isWakingUp)
+        {
+            Debug.Log("Cannot show thought during wake-up sequence");
+            return;
+        }
+
         if (thoughtBubble != null)
         {
             thoughtBubble.ShowThought(emotion);
@@ -291,4 +321,91 @@ public class SceneController : MonoBehaviour
 
     [ContextMenu("Show Angry Thought")]
     public void ShowAngryThought() => ShowThought("angry");
+
+    public void ResetCamera()
+    {
+        // Find the XR Origin or Camera Rig
+        var xrOrigin = GameObject.Find("XR Origin");
+        if (xrOrigin == null)
+        {
+            xrOrigin = GameObject.Find("Camera Rig"); // Fallback name
+        }
+
+        if (xrOrigin != null)
+        {
+            // Get the camera's forward direction but zero out the Y component
+            var mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                Vector3 cameraForward = mainCamera.transform.forward;
+                cameraForward.y = 0;
+                cameraForward.Normalize();
+
+                // Reset the XR Origin position
+                Vector3 currentPos = xrOrigin.transform.position;
+                xrOrigin.transform.position = new Vector3(0, currentPos.y, 0); // Keep current height
+
+                // Reset the XR Origin rotation to face forward
+                if (cameraForward != Vector3.zero)
+                {
+                    xrOrigin.transform.rotation = Quaternion.LookRotation(cameraForward);
+                }
+                else
+                {
+                    xrOrigin.transform.rotation = Quaternion.identity;
+                }
+
+                Debug.Log("Camera view reset");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Could not find XR Origin or Camera Rig");
+        }
+    }
+
+    // Wake up sequence methods
+    public void StartWakeUpSequence()
+    {
+        if (isWakingUp) return; // Prevent multiple wake-up sequences
+        StartCoroutine(WakeUpSequence());
+    }
+
+    private IEnumerator WakeUpSequence()
+    {
+        isWakingUp = true;
+        wasHoveringDuringWakeUp = false;
+        hoveringObject = null;
+        Debug.Log("Starting wake-up sequence");
+
+        // Play initial wake up sound
+        PlaySound("peep");
+
+        // Wait for 2 seconds
+        yield return new WaitForSeconds(2f);
+
+        isWakingUp = false;
+        Debug.Log("Wake-up sequence complete");
+
+        // Check if something was hovering during wake-up
+        if (wasHoveringDuringWakeUp && hoveringObject != null)
+        {
+            // Trigger hover effect that was waiting
+            ShowColouredLight("happy");
+        }
+    }
+
+    // Call this from your hover detection script
+    public void OnObjectHover(GameObject hoveredObject)
+    {
+        if (isWakingUp)
+        {
+            wasHoveringDuringWakeUp = true;
+            hoveringObject = hoveredObject;
+            return;
+        }
+
+        // Normal hover behavior
+        ShowColouredLight("happy");
+    }
 }
