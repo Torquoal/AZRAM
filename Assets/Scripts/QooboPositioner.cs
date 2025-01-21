@@ -101,8 +101,16 @@ public class QooboPositioner : MonoBehaviour
             {
                 if (!isPositioned || isRepositioning)
                 {
-                    Debug.Log($"Pinch detected - Updating position (isPositioned: {isPositioned}, isRepositioning: {isRepositioning})");
-                    UpdateQooboPosition();
+                    // Only allow pinch repositioning if wake-up is not complete
+                    if (!sceneController.IsWakeUpComplete())
+                    {
+                        Debug.Log($"Pinch detected - Updating position (isPositioned: {isPositioned}, isRepositioning: {isRepositioning})");
+                        UpdateQooboPosition();
+                    }
+                    else
+                    {
+                        Debug.Log("Pinch detected but wake-up sequence is complete - ignoring");
+                    }
                 }
                 else
                 {

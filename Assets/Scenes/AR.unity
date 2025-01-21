@@ -13612,6 +13612,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1567071}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1112418005}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1112418009}
     - targetCorrespondingSourceObject: {fileID: -1018664272722485354, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1112418007}
@@ -13805,6 +13811,27 @@ MonoBehaviour:
   enableSizeFluctuation: 1
   fluctuationAmount: 0.15
   fluctuationSpeed: 0.3
+--- !u!95 &1112418005
+Animator:
+  serializedVersion: 5
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1112417998}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 9100000, guid: d143da54fe569b64da850a7f61f56204, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!114 &1112418006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13873,6 +13900,18 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8632055958874330854, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
   m_PrefabInstance: {fileID: 1112417997}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1112418009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1112417998}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d96953eed32ae44ca10db2403597b1e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &1112418010
 MonoBehaviour:
   m_ObjectHideFlags: 0

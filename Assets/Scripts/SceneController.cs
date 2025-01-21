@@ -25,6 +25,7 @@ public class SceneController : MonoBehaviour
     private bool isWakingUp = false;
     private bool wasHoveringDuringWakeUp = false;
     private GameObject hoveringObject = null;
+    private bool wakeUpComplete = false;
 
     void Start()
     {
@@ -374,6 +375,7 @@ public class SceneController : MonoBehaviour
     private IEnumerator WakeUpSequence()
     {
         isWakingUp = true;
+        wakeUpComplete = false;
         wasHoveringDuringWakeUp = false;
         hoveringObject = null;
         Debug.Log("Starting wake-up sequence");
@@ -384,7 +386,11 @@ public class SceneController : MonoBehaviour
         // Wait for 2 seconds
         yield return new WaitForSeconds(2f);
 
+        // Play initial wake up sound
+        PlaySound("peep");
+
         isWakingUp = false;
+        wakeUpComplete = true;
         Debug.Log("Wake-up sequence complete");
 
         // Check if something was hovering during wake-up
@@ -407,5 +413,10 @@ public class SceneController : MonoBehaviour
 
         // Normal hover behavior
         ShowColouredLight("happy");
+    }
+
+    public bool IsWakeUpComplete()
+    {
+        return wakeUpComplete;
     }
 }
