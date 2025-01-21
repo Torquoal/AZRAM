@@ -18,6 +18,7 @@ public class SceneController : MonoBehaviour
 
     [Header("References")]
     [SerializeField] private ThoughtBubbleController thoughtBubble;
+    [SerializeField] private FaceController faceController;
 
     private bool isVisible = false;
     private Coroutine fadeCoroutine;
@@ -379,6 +380,9 @@ public class SceneController : MonoBehaviour
         wasHoveringDuringWakeUp = false;
         hoveringObject = null;
         Debug.Log("Starting wake-up sequence");
+
+        // Set neutral face at start
+        if (faceController != null) faceController.SetFaceExpression("neutral");
 
         // Play initial wake up sound
         PlaySound("peep");
