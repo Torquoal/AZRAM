@@ -381,16 +381,26 @@ public class SceneController : MonoBehaviour
         hoveringObject = null;
         Debug.Log("Starting wake-up sequence");
 
-        // Set neutral face at start
-        if (faceController != null) faceController.SetFaceExpression("neutral");
+        // Set neutral face at start (invisible)
+        if (faceController != null)
+        {
+            faceController.SetFaceExpression("neutral");
+            faceController.SetFaceVisibility(0f); // Ensure face starts invisible
+        }
 
         // Play initial wake up sound
         PlaySound("peep");
 
+        // Start face fade in
+        if (faceController != null)
+        {
+            faceController.StartFadeIn();
+        }
+
         // Wait for 2 seconds
         yield return new WaitForSeconds(2f);
 
-        // Play initial wake up sound
+        // Play second wake up sound
         PlaySound("peep");
 
         isWakingUp = false;
@@ -422,5 +432,20 @@ public class SceneController : MonoBehaviour
     public bool IsWakeUpComplete()
     {
         return wakeUpComplete;
+    }
+
+    // Face control methods
+    public void SetFaceExpression(string expression)
+    {
+        if (isWakingUp)
+        {
+            Debug.Log("Cannot change face expression during wake-up sequence");
+            return;
+        }
+
+        if (faceController != null)
+        {
+            faceController.SetFaceExpression(expression);
+        }
     }
 }

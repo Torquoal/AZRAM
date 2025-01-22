@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 
 public class FaceController : MonoBehaviour
 {
@@ -6,6 +7,7 @@ public class FaceController : MonoBehaviour
     [SerializeField] private MeshFilter faceMeshFilter;
     [SerializeField] private MeshRenderer faceMeshRenderer;
     [SerializeField] private Material defaultFaceMaterial;
+    [SerializeField] private SceneController sceneController;
 
     [Header("Face Materials")]
     [SerializeField] private Material happyFaceMaterial;
@@ -22,6 +24,11 @@ public class FaceController : MonoBehaviour
     [SerializeField] private float curvatureAngle = 60f; // How much the face curves around
     [SerializeField] private int curveResolution = 20; // Number of segments for the curve
     [SerializeField] private float scaleFactor = 2f; // Overall scale multiplier
+    [SerializeField] private float fadeInDuration = 2f;
+
+    private Material currentMaterial;
+    private float currentAlpha = 0f;
+    private Coroutine fadeCoroutine;
 
     private void Start()
     {
@@ -35,9 +42,87 @@ public class FaceController : MonoBehaviour
         transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
 
         CreateCurvedFaceMesh();
+        SetupMaterialProperties();
+        
+        // Start with face invisible
+        SetFaceVisibility(0f);
         SetFaceExpression("neutral"); // Start with neutral expression
         
         Debug.Log($"Face mesh created with settings: Scale={scaleFactor}, Height={faceHeight}, Diameter={faceDiameter}, Curvature={curvatureAngle}");
+    }
+
+    private void SetupMaterialProperties()
+    {
+        if (faceMeshRenderer == null)
+        {
+            Debug.LogError("Face Mesh Renderer not assigned!");
+            return;
+        }
+
+        // Set up material array with all face materials
+        Material[] materials = new Material[] 
+        { 
+            defaultFaceMaterial, 
+            happyFaceMaterial, 
+            sadFaceMaterial, 
+            angryFaceMaterial, 
+            scaredFaceMaterial, 
+            surprisedFaceMaterial, 
+            neutralFaceMaterial 
+        };
+
+        // Configure each material
+        foreach (Material mat in materials)
+        {
+            if (mat != null)
+            {
+                // Create a new material instance to avoid modifying the original
+                Material instanceMat = new Material(mat);
+                
+                // Force unlit shader and configure it
+                instanceMat.shader = Shader.Find("Universal Render Pipeline/Unlit");
+                
+                // Ensure the material is completely unaffected by lighting
+                instanceMat.DisableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
+                instanceMat.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
+                instanceMat.DisableKeyword("_RECEIVE_SHADOWS_OFF");
+                instanceMat.SetFloat("_EnvironmentReflections", 0f);
+                instanceMat.SetFloat("_SpecularHighlights", 0f);
+                instanceMat.SetInt("_Surface", 1); // 1 = Transparent
+                
+                // Configure transparency
+                instanceMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                instanceMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                instanceMat.SetInt("_ZWrite", 0);
+                instanceMat.SetFloat("_Blend", 0);
+                
+                // Ensure back-face culling is enabled
+                instanceMat.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Back);
+                
+                // Set render queue for transparency
+                instanceMat.renderQueue = 3000;
+                
+                // Disable all lighting-related features
+                instanceMat.SetShaderPassEnabled("ShadowCaster", false);
+                instanceMat.SetShaderPassEnabled("DepthOnly", false);
+                instanceMat.SetShaderPassEnabled("Universal2D", true);
+                
+                // Replace the original material reference with the instance
+                if (mat == defaultFaceMaterial) defaultFaceMaterial = instanceMat;
+                else if (mat == happyFaceMaterial) happyFaceMaterial = instanceMat;
+                else if (mat == sadFaceMaterial) sadFaceMaterial = instanceMat;
+                else if (mat == angryFaceMaterial) angryFaceMaterial = instanceMat;
+                else if (mat == scaredFaceMaterial) scaredFaceMaterial = instanceMat;
+                else if (mat == surprisedFaceMaterial) surprisedFaceMaterial = instanceMat;
+                else if (mat == neutralFaceMaterial) neutralFaceMaterial = instanceMat;
+                
+                Debug.Log($"Configured unlit material instance: {instanceMat.name}");
+            }
+        }
+
+        // Set the mesh renderer to not cast or receive shadows
+        faceMeshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        faceMeshRenderer.receiveShadows = false;
     }
 
     private void CreateCurvedFaceMesh()
@@ -72,21 +157,21 @@ public class FaceController : MonoBehaviour
             vertices[i * 2 + 1] = new Vector3(x, -halfHeight, z + faceOffset);
             uvs[i * 2 + 1] = new Vector2((float)i / (curveResolution - 1), 0);
 
-            // Create triangles
+            // Create triangles with reversed winding order
             if (i < curveResolution - 1)
             {
                 int baseIndex = i * 6;
                 int vertIndex = i * 2;
 
-                // First triangle
+                // First triangle (reversed winding)
                 triangles[baseIndex] = vertIndex;
-                triangles[baseIndex + 1] = vertIndex + 2;
-                triangles[baseIndex + 2] = vertIndex + 1;
+                triangles[baseIndex + 1] = vertIndex + 1;
+                triangles[baseIndex + 2] = vertIndex + 2;
 
-                // Second triangle
+                // Second triangle (reversed winding)
                 triangles[baseIndex + 3] = vertIndex + 2;
-                triangles[baseIndex + 4] = vertIndex + 3;
-                triangles[baseIndex + 5] = vertIndex + 1;
+                triangles[baseIndex + 4] = vertIndex + 1;
+                triangles[baseIndex + 5] = vertIndex + 3;
             }
         }
 
@@ -135,7 +220,10 @@ public class FaceController : MonoBehaviour
 
         if (targetMaterial != null && faceMeshRenderer != null)
         {
-            faceMeshRenderer.material = targetMaterial;
+            currentMaterial = targetMaterial;
+            faceMeshRenderer.material = currentMaterial;
+            // Maintain current alpha when changing expression
+            SetFaceVisibility(currentAlpha);
             Debug.Log($"Set face material to {expression}");
         }
         else
@@ -144,6 +232,44 @@ public class FaceController : MonoBehaviour
         }
     }
 
+    public void StartFadeIn()
+    {
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+        }
+        fadeCoroutine = StartCoroutine(FadeInCoroutine());
+    }
+
+    private IEnumerator FadeInCoroutine()
+    {
+        float elapsedTime = 0f;
+        float startAlpha = currentAlpha;
+
+        while (elapsedTime < fadeInDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float newAlpha = Mathf.Lerp(startAlpha, 1f, elapsedTime / fadeInDuration);
+            SetFaceVisibility(newAlpha);
+            yield return null;
+        }
+
+        SetFaceVisibility(1f);
+        fadeCoroutine = null;
+    }
+
+    public void SetFaceVisibility(float alpha)
+    {
+        currentAlpha = alpha;
+        if (currentMaterial != null)
+        {
+            Color color = currentMaterial.color;
+            color.a = alpha;
+            currentMaterial.color = color;
+        }
+    }
+
+    [ContextMenu("Set Face to Happy")]
     private void SetFaceToHappy(){
         SetFaceExpression("happy");
     }
