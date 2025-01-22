@@ -19,6 +19,8 @@ public class SceneController : MonoBehaviour
     [Header("References")]
     [SerializeField] private ThoughtBubbleController thoughtBubble;
     [SerializeField] private FaceController faceController;
+    [SerializeField] private DistanceTracker distanceTracker;
+    [SerializeField] private EmotionController emotionController;
 
     private bool isVisible = false;
     private Coroutine fadeCoroutine;
@@ -425,8 +427,16 @@ public class SceneController : MonoBehaviour
             return;
         }
 
-        // Normal hover behavior
-        ShowColouredLight("happy");
+        // Express happiness when hovered
+        if (emotionController != null)
+        {
+            emotionController.SetHappy();
+        }
+        else
+        {
+            // Fallback to old behavior if emotionController not set
+            ShowColouredLight("happy");
+        }
     }
 
     public bool IsWakeUpComplete()
@@ -447,5 +457,38 @@ public class SceneController : MonoBehaviour
         {
             faceController.SetFaceExpression(expression);
         }
+    }
+
+    // Distance tracking methods
+    public float GetDistanceToPlayer()
+    {
+        if (distanceTracker != null)
+        {
+            return distanceTracker.GetCurrentDistance();
+        }
+        return -1f; // Invalid distance
+    }
+
+    public void SetDistanceDebugVisible(bool visible)
+    {
+        if (distanceTracker != null)
+        {
+            distanceTracker.SetDebugTextVisibility(visible);
+        }
+    }
+
+    public void SetEmotionDebugVisible(bool visible)
+    {
+        if (emotionController != null)
+        {
+            emotionController.SetDebugTextVisibility(visible);
+        }
+    }
+
+    // Set all debug displays visible/invisible
+    public void SetAllDebugVisible(bool visible)
+    {
+        SetDistanceDebugVisible(visible);
+        SetEmotionDebugVisible(visible);
     }
 }
