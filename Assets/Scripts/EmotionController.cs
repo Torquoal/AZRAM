@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
 
 public class EmotionController : MonoBehaviour
 {
@@ -10,6 +11,10 @@ public class EmotionController : MonoBehaviour
     [Header("Debug Settings")]
     [SerializeField] private bool showDebugText = true;
     [SerializeField] private string emotionFormat = "Emotion: {0}";
+
+    [Header("Emotion Control")]
+    [SerializeField] private Emotion manualEmotion = Emotion.Neutral;
+    [SerializeField] private float initialEmotionDelay = 1f;
 
     public enum Emotion
     {
@@ -22,6 +27,7 @@ public class EmotionController : MonoBehaviour
     }
 
     private Emotion currentEmotion = Emotion.Neutral;
+    private bool hasInitialized = false;
 
     private void Start()
     {
@@ -32,13 +38,45 @@ public class EmotionController : MonoBehaviour
             return;
         }
 
+        // Set the current emotion without expressing it
+        currentEmotion = manualEmotion;
         UpdateEmotionDisplay();
+
+        // Wait before expressing the initial emotion
+        StartCoroutine(InitialEmotionDelay());
+    }
+
+    private IEnumerator InitialEmotionDelay()
+    {
+        yield return new WaitForSeconds(initialEmotionDelay);
+        hasInitialized = true;
+        
+        // Only express emotion if wake-up is complete
+        if (sceneController.IsWakeUpComplete())
+        {
+            ExpressEmotion();
+        }
+    }
+
+    private void OnValidate()
+    {
+        // Only update during play mode and after initialization
+        if (Application.isPlaying && hasInitialized && manualEmotion != currentEmotion)
+        {
+            SetEmotion(manualEmotion);
+        }
     }
 
     public void SetEmotion(Emotion emotion)
     {
         currentEmotion = emotion;
-        //ExpressEmotion(); // play expression on emotion change
+        manualEmotion = emotion; // Keep inspector value in sync
+        
+        // Only express emotion if initialized and wake-up is complete
+        if (hasInitialized && sceneController.IsWakeUpComplete())
+        {
+            ExpressEmotion();
+        }
         UpdateEmotionDisplay();
     }
 
@@ -83,6 +121,7 @@ public class EmotionController : MonoBehaviour
         sceneController.PlaySound(emotionName);
         sceneController.ShowThought(emotionName);
         sceneController.SetFaceExpression(emotionName);
+        sceneController.TailsEmotion(emotionName);
 
         Debug.Log($"Expressing emotion: {currentEmotion}");
     }

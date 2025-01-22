@@ -21,6 +21,7 @@ public class SceneController : MonoBehaviour
     [SerializeField] private FaceController faceController;
     [SerializeField] private DistanceTracker distanceTracker;
     [SerializeField] private EmotionController emotionController;
+    [SerializeField] private TailAnimations tailAnimations;
 
     private bool isVisible = false;
     private Coroutine fadeCoroutine;
@@ -291,6 +292,14 @@ public class SceneController : MonoBehaviour
         if (!isInitialized) return;
         if (lightSphere != null)
             lightSphere.SetScale(scale);
+    }
+
+    public void TailsEmotion(string emotion)
+    {
+        if (tailAnimations != null)
+        {
+            tailAnimations.PlayTailAnimation(emotion);
+        }
     }
 
     // Thought bubble methods

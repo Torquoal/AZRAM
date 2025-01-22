@@ -24,16 +24,16 @@ public class TailAnimations : MonoBehaviour
 
         switch (animationName.ToLower())
         {
-            case "horizontal":
+            case "happy":
                 PlayHorizontalTail();
                 break;
-            case "bristle":
+            case "angry":
                 PlayBristleTail();
                 break;
-            case "droop":
+            case "sad":
                 PlayDroopTail();
                 break;
-            case "sleepy":
+            case "scared":
                 PlaySleepyTail();
                 break;
             case "surprised":
@@ -51,7 +51,7 @@ public class TailAnimations : MonoBehaviour
     [ContextMenu("Play Horizontal Tail")]
     private void PlayHorizontalTail()
     {
-        tailAnimator.SetTrigger("TrHorizontal");
+        tailAnimator.SetTrigger("TrHorizontalWag");
     }       
 
     [ContextMenu("Play Bristle Tail")]

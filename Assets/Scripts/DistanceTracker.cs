@@ -80,8 +80,8 @@ public class DistanceTracker : MonoBehaviour
                 Debug.Log($"Camera pos: {cameraPosition}, Qoobo pos: {qooboPosition}, Distance: {currentDistance}");
             }
 
-            // Update UI text if available
-            if (distanceText != null && showDebugText)
+            // Update UI text if available - removed showDebugText check here
+            if (distanceText != null)
             {
                 distanceText.text = string.Format(distanceFormat, currentDistance);
             }
