@@ -8,6 +8,7 @@ public class FaceController : MonoBehaviour
     [SerializeField] private MeshRenderer faceMeshRenderer;
     [SerializeField] private Material defaultFaceMaterial;
     [SerializeField] private SceneController sceneController;
+    [SerializeField] private FaceAnimationController faceAnimationController;
 
     [Header("Face Materials")]
     [SerializeField] private Material happyFaceMaterial;
@@ -29,6 +30,7 @@ public class FaceController : MonoBehaviour
     private Material currentMaterial;
     private float currentAlpha = 0f;
     private Coroutine fadeCoroutine;
+    private bool isUsingAnimatedFace = false;
 
     private void Start()
     {
@@ -191,6 +193,7 @@ public class FaceController : MonoBehaviour
     public void SetFaceExpression(string expression)
     {
         Material targetMaterial = null;
+        bool shouldAnimate = false;
 
         switch (expression.ToLower())
         {
@@ -210,7 +213,15 @@ public class FaceController : MonoBehaviour
                 targetMaterial = surprisedFaceMaterial;
                 break;
             case "neutral":
-                targetMaterial = neutralFaceMaterial;
+                if (faceAnimationController != null)
+                {
+                    targetMaterial = faceAnimationController.GetAnimatedMaterial();
+                    shouldAnimate = true;
+                }
+                else
+                {
+                    targetMaterial = neutralFaceMaterial;
+                }
                 break;
             default:
                 targetMaterial = defaultFaceMaterial;
@@ -220,8 +231,26 @@ public class FaceController : MonoBehaviour
 
         if (targetMaterial != null && faceMeshRenderer != null)
         {
+            // Stop any current animation if we're switching away from animated face
+            if (isUsingAnimatedFace && !shouldAnimate && faceAnimationController != null)
+            {
+                faceAnimationController.StopAnimation();
+            }
+
             currentMaterial = targetMaterial;
             faceMeshRenderer.material = currentMaterial;
+            
+            // Start animation if using animated face
+            if (shouldAnimate && faceAnimationController != null)
+            {
+                faceAnimationController.StartAnimation();
+                isUsingAnimatedFace = true;
+            }
+            else
+            {
+                isUsingAnimatedFace = false;
+            }
+
             // Maintain current alpha when changing expression
             SetFaceVisibility(currentAlpha);
             Debug.Log($"Set face material to {expression}");
@@ -263,9 +292,16 @@ public class FaceController : MonoBehaviour
         currentAlpha = alpha;
         if (currentMaterial != null)
         {
-            Color color = currentMaterial.color;
-            color.a = alpha;
-            currentMaterial.color = color;
+            if (isUsingAnimatedFace && faceAnimationController != null)
+            {
+                faceAnimationController.SetAlpha(alpha);
+            }
+            else
+            {
+                Color color = currentMaterial.color;
+                color.a = alpha;
+                currentMaterial.color = color;
+            }
         }
     }
 

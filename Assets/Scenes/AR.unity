@@ -11819,10 +11819,11 @@ Transform:
   m_GameObject: {fileID: 963561170}
   serializedVersion: 2
   m_LocalRotation: {x: -3.3596497e-11, y: 0.008462674, z: -9.9625724e-12, w: 0.9999642}
-  m_LocalPosition: {x: 0, y: 0.29, z: 0.1}
+  m_LocalPosition: {x: 0, y: 0.35, z: 0.1}
   m_LocalScale: {x: 1.1361203, y: 0.43938982, z: 1.1361203}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1178981130}
   m_Father: {fileID: 1112417999}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &963561172
@@ -11841,15 +11842,16 @@ MonoBehaviour:
   faceMeshRenderer: {fileID: 963561173}
   defaultFaceMaterial: {fileID: 2100000, guid: a2e8e5009c1821b4aad6e07ff3b3b7ce, type: 2}
   sceneController: {fileID: 799751467}
+  faceAnimationController: {fileID: 1178981131}
   happyFaceMaterial: {fileID: 2100000, guid: 795ca06bdb7fd4b478831b672dc178f1, type: 2}
   sadFaceMaterial: {fileID: 2100000, guid: cd6135aa11350624a8f92a5a3919f81d, type: 2}
   angryFaceMaterial: {fileID: 2100000, guid: d515595deeb608f429b40ae082c31659, type: 2}
   scaredFaceMaterial: {fileID: 2100000, guid: c7ce3d522bfba8846bf1729d2a564c44, type: 2}
   surprisedFaceMaterial: {fileID: 2100000, guid: c5e5fb31f82fba342ab79a2b45a8769d, type: 2}
   neutralFaceMaterial: {fileID: 2100000, guid: a2e8e5009c1821b4aad6e07ff3b3b7ce, type: 2}
-  faceOffset: 1
+  faceOffset: 0.97
   faceDiameter: 0.21
-  faceHeight: 0.23
+  faceHeight: 0.16
   curvatureAngle: 60
   curveResolution: 20
   scaleFactor: 10
@@ -14953,6 +14955,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 666999309}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1178981129
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1178981130}
+  - component: {fileID: 1178981131}
+  m_Layer: 0
+  m_Name: FaceAnimation
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1178981130
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178981129}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 963561171}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1178981131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1178981129}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1cdcf19ba9d0703448a5824fcb1e4fcf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  neutralLoopPath: NeutralLoop
+  frameRate: 24
 --- !u!1 &1181708167
 GameObject:
   m_ObjectHideFlags: 0
