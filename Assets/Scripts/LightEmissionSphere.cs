@@ -17,6 +17,14 @@ public class LightEmissionSphere : MonoBehaviour
     [SerializeField] [Range(0f, 0.15f)] private float fluctuationAmount = 0.15f;
     [SerializeField] [Range(0.1f, 2f)] private float fluctuationSpeed = 0.3f;
 
+    [Header("Fade Settings")]
+    [SerializeField] private float fadeInDuration = 1f;
+    [SerializeField] private float fadeOutDuration = 1f;
+    [SerializeField] private float defaultTransparency = 1f;
+
+    private bool isVisible = false;
+    private Coroutine fadeCoroutine;
+
     // Add preset colors for easy access
     public static readonly Color PresetRed = new Color(0.45f, 0.03f, 0.0f);
     public static readonly Color PresetBlue = new Color(0.01f, 0.0f, 0.34f);
@@ -60,13 +68,13 @@ public class LightEmissionSphere : MonoBehaviour
         
         // Create a new instance of the material to ensure it's unique
         emissionMaterial = new Material(emissiveSphereMaterial);
-        Debug.Log($"Created new emission material instance. Initial color: {emissionMaterial.GetColor("_EmissionColor")}");
         
         // Apply material
         Renderer sphereRenderer = emissionSphere.GetComponent<Renderer>();
         sphereRenderer.material = emissionMaterial;
         
-        // Force material update
+        // Initialize with zero transparency
+        transparency = 0f;
         UpdateEmissionProperties();
         
         // Remove interaction capabilities
@@ -355,6 +363,79 @@ public class LightEmissionSphere : MonoBehaviour
         {
             Debug.Log("Parent changed - Reapplying material properties");
             UpdateEmissionProperties();
+        }
+    }
+
+    public void Show()
+    {
+        if (!isVisible)
+        {
+            if (fadeCoroutine != null)
+                StopCoroutine(fadeCoroutine);
+            fadeCoroutine = StartCoroutine(FadeLight(0f, defaultTransparency, fadeInDuration));
+            isVisible = true;
+        }
+    }
+
+    public void Hide()
+    {
+        if (isVisible)
+        {
+            if (fadeCoroutine != null)
+                StopCoroutine(fadeCoroutine);
+            fadeCoroutine = StartCoroutine(FadeLight(transparency, 0f, fadeOutDuration));
+            isVisible = false;
+        }
+    }
+
+    private IEnumerator FadeLight(float startTransparency, float endTransparency, float duration)
+    {
+        float elapsedTime = 0f;
+        
+        while (elapsedTime < duration)
+        {
+            elapsedTime += Time.deltaTime;
+            float currentTransparency = Mathf.Lerp(startTransparency, endTransparency, elapsedTime / duration);
+            SetTransparency(currentTransparency);
+            yield return null;
+        }
+        
+        SetTransparency(endTransparency);
+    }
+
+    // Add emotion to color mapping
+    public void SetEmotionColor(string emotion)
+    {
+        switch (emotion.ToLower())
+        {
+            case "happy":
+                SetColorPink();
+                SetIntensity(1f);
+                SetTransparency(1f);
+                break;
+            case "sad":
+                SetColorBlue();
+                SetIntensity(1f);
+                SetTransparency(1f);
+                break;
+            case "surprised":
+                SetColorYellow();
+                SetIntensity(1f);
+                SetTransparency(1f);
+                break;
+            case "scared":
+                SetColorGrey();
+                SetIntensity(1f);
+                SetTransparency(1f);
+                break;
+            case "angry":
+                SetColorRed();
+                SetIntensity(1f);
+                SetTransparency(1f);
+                break;
+            default:
+                Debug.LogWarning($"Unknown emotion: {emotion}");
+                break;
         }
     }
 } 

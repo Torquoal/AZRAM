@@ -6,26 +6,14 @@ public class SceneController : MonoBehaviour
 {
     [Header("Scene References")]
     [SerializeField] private LightEmissionSphere lightSphere;
-    [SerializeField] private AudioSource qooboSpeaker;
-
-    [Header("Audio Clips")]
-    [SerializeField] private AudioClip[] beepSounds;  // Drag your beep sound files here
-
-    [Header("Transition Settings")]
-    [SerializeField] private float fadeInDuration = 1f;
-    [SerializeField] private float fadeOutDuration = 1f;
-    [SerializeField] private float defaultTransparency = 1f;
-
-    [Header("References")]
+    [SerializeField] private AudioController audioController;
     [SerializeField] private ThoughtBubbleController thoughtBubble;
     [SerializeField] private FaceController faceController;
     [SerializeField] private DistanceTracker distanceTracker;
     [SerializeField] private EmotionController emotionController;
     [SerializeField] private TailAnimations tailAnimations;
+    [SerializeField] private StrokeDetector strokeDetector;
 
-    private bool isVisible = false;
-    private Coroutine fadeCoroutine;
-    private bool isInitialized = false;
     private bool isWakingUp = false;
     private bool wasHoveringDuringWakeUp = false;
     private GameObject hoveringObject = null;
@@ -33,165 +21,63 @@ public class SceneController : MonoBehaviour
 
     void Start()
     {
-        // Wait a frame to ensure LightEmissionSphere is fully initialized
-        StartCoroutine(InitializeLightSphere());
+        // Subscribe to stroke events
+        if (strokeDetector != null)
+        {
+            strokeDetector.OnStrokeDetected += HandleStrokeDetected;
+        }
+    }
+
+    void OnDestroy()
+    {
+        // Unsubscribe from stroke events
+        if (strokeDetector != null)
+        {
+            strokeDetector.OnStrokeDetected -= HandleStrokeDetected;
+        }
+    }
+
+    private void HandleStrokeDetected(StrokeDetector.StrokeDirection direction)
+    {
+        if (isWakingUp) return;
+
+        // Play happy sound and show happy expression
+        PlaySound("happy");
+        
+        // Show appropriate light color based on stroke direction
+        switch (direction)
+        {
+            case StrokeDetector.StrokeDirection.FrontToBack:
+                ShowColouredLight("happy"); 
+                ShowThought("happy");
+                SetFaceExpression("happy");
+                break;
+            case StrokeDetector.StrokeDirection.BackToFront:
+                ShowColouredLight("angry"); 
+                ShowThought("angry");
+                SetFaceExpression("angry");
+                break;
+            case StrokeDetector.StrokeDirection.LeftToRight:
+                ShowColouredLight("surprised"); 
+                ShowThought("surprised");
+                SetFaceExpression("surprised");
+                break;
+            case StrokeDetector.StrokeDirection.RightToLeft:
+                ShowColouredLight("sad"); 
+                ShowThought("sad");
+                SetFaceExpression("sad");
+                break;
+            default:
+                Debug.Log($"Unhandled stroke direction: {direction}");
+                break;
+        }
+
+        Debug.Log($"Stroke detected: {direction}");
     }
 
     void Update()
     {
-        // Check for R key using new Input System
-        //if (Keyboard.current != null && Keyboard.current.rKey.wasPressedThisFrame)
-        //{
-        //    ResetCamera();
-        //}
-    }
-
-    private IEnumerator InitializeLightSphere()
-    {
-        // Wait for two frames to ensure LightEmissionSphere has completed its setup
-        yield return new WaitForEndOfFrame();
-        yield return new WaitForEndOfFrame();
-
-        if (lightSphere != null)
-        {
-            lightSphere.SetTransparency(0f);
-            isInitialized = true;
-        }
-    }
-
-    // Light control methods
-    [ContextMenu("Show Red Light")]
-    public void ShowRedLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorRed();
-            lightSphere.SetIntensity(1f);  // Set full intensity
-            lightSphere.SetTransparency(1f);  // Set full transparency
-            ShowLightSphere();
-        }
-    }
-
-    [ContextMenu("Show Blue Light")]
-    public void ShowBlueLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorBlue();
-            lightSphere.SetIntensity(1f);
-            lightSphere.SetTransparency(1f);
-            ShowLightSphere();
-        }
-    }
-
-    [ContextMenu("Show Green Light")]   
-    public void ShowGreenLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorGreen();
-            lightSphere.SetIntensity(1f);
-            lightSphere.SetTransparency(1f);
-            ShowLightSphere();
-        }
-    }
-
-    [ContextMenu("Show Yellow Light")]
-    public void ShowYellowLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorYellow();
-            lightSphere.SetIntensity(1f);
-            lightSphere.SetTransparency(1f);
-            ShowLightSphere();
-        }
-    }
-
-    [ContextMenu("Show Purple Light")]
-    public void ShowPurpleLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorPurple();
-            lightSphere.SetIntensity(1f);
-            lightSphere.SetTransparency(1f);
-            ShowLightSphere();
-        }
-    }
-
-    [ContextMenu("Show Pink Light")]    
-    public void ShowPinkLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorPink();
-            lightSphere.SetIntensity(1f);
-            lightSphere.SetTransparency(1f);
-            ShowLightSphere();
-        }
-    }
-
-    [ContextMenu("Show Grey Light")]
-    public void ShowGreyLight()
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-        {
-            lightSphere.SetColorGrey();
-            lightSphere.SetIntensity(1f);
-            lightSphere.SetTransparency(1f);
-            ShowLightSphere();
-        }
-    }
-
-    // Visibility control methods
-    public void ShowLightSphere()
-    {
-        if (!isInitialized) return;
-        if (!isVisible)
-        {
-            if (fadeCoroutine != null)
-                StopCoroutine(fadeCoroutine);
-            fadeCoroutine = StartCoroutine(FadeLight(0f, defaultTransparency, fadeInDuration));
-            isVisible = true;
-        }
-    }
-
-    [ContextMenu("Hide Light")]
-    public void HideLightSphere()
-    {
-        if (!isInitialized) return;
-        if (isVisible)
-        {
-            if (fadeCoroutine != null)
-                StopCoroutine(fadeCoroutine);
-            fadeCoroutine = StartCoroutine(FadeLight(lightSphere.CurrentColor.a, 0f, fadeOutDuration));
-            isVisible = false;
-        }
-    }
-
-    private IEnumerator FadeLight(float startTransparency, float endTransparency, float duration)
-    {
-        if (!isInitialized) yield break;
-        
-        float elapsedTime = 0f;
-        
-        while (elapsedTime < duration)
-        {
-            elapsedTime += Time.deltaTime;
-            float currentTransparency = Mathf.Lerp(startTransparency, endTransparency, elapsedTime / duration);
-            lightSphere.SetTransparency(currentTransparency);
-            yield return null;
-        }
-        
-        lightSphere.SetTransparency(endTransparency);
+ 
     }
 
     // Audio control methods
@@ -203,44 +89,14 @@ public class SceneController : MonoBehaviour
             return;
         }
         
-        int index = 0;
-        string[] emotionArray = {"happy", "sad", "scared", "surprised", "angry", "peep"};
-
-        for (int i = 0; i < emotionArray.Length; i++)
+        if (audioController != null)
         {
-            if (emotionArray[i] == emotion)
-            {
-                index = i;
-            }
-        }   
-
-        if (qooboSpeaker != null && beepSounds != null && index < beepSounds.Length && beepSounds[index] != null)
-        {
-            qooboSpeaker.clip = beepSounds[index];
-            qooboSpeaker.Play();
+            audioController.PlaySound(emotion);
         }
-    }
-
-    // Example Specific Audio control methods
-    [ContextMenu("Play Happy Sound")]
-    public void PlayHappySound()
-    {
-        {
-            PlaySound("happy");
-        }
-    }
-
-
-    // Additional utility methods for the light sphere
-    public void SetLightIntensity(float intensity)
-    {
-        if (!isInitialized) return;
-        if (lightSphere != null)
-            lightSphere.SetIntensity(intensity);
     }
 
     // Emotion to light color mapping
-    public void ShowColouredLight(string type)
+    public void ShowColouredLight(string emotion)
     {
         if (isWakingUp)
         {
@@ -248,48 +104,32 @@ public class SceneController : MonoBehaviour
             return;
         }
 
-        if (!isInitialized) return;
+        if (lightSphere == null) return;
         
-        switch (type.ToLower())
-        {
-            case "happy":
-                ShowPinkLight();
-                break;
-            case "sad":
-                ShowBlueLight();
-                break;
-            case "surprised":
-                ShowYellowLight();
-                break;
-            case "scared":
-                ShowGreyLight();
-                break;
-            case "angry":
-                ShowRedLight();
-                break;
-            default:
-                Debug.LogWarning($"Unknown colour type: {type}");
-                break;
-        }
+        lightSphere.SetEmotionColor(emotion);
+        lightSphere.Show();
+    }
+
+    public void HideLightSphere()
+    {
+        if (lightSphere != null)
+            lightSphere.Hide();
     }
 
     public void SetLightTransparency(float transparency)
     {
-        if (!isInitialized) return;
         if (lightSphere != null)
             lightSphere.SetTransparency(transparency);
     }
 
     public void EnableSizeFluctuation(bool enable)
     {
-        if (!isInitialized) return;
         if (lightSphere != null)
             lightSphere.SetSizeFluctuation(enable);
     }
 
     public void SetLightScale(float scale)
     {
-        if (!isInitialized) return;
         if (lightSphere != null)
             lightSphere.SetScale(scale);
     }
