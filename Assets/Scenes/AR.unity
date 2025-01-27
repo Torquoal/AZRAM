@@ -14247,6 +14247,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 318212777}
+    - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1629618761}
     - targetCorrespondingSourceObject: {fileID: 8632055958874330854, guid: a2ac7d82950abfe4191e39f7f54ffbeb, type: 3}
       insertIndex: -1
       addedObject: {fileID: 348399357}
@@ -20708,6 +20711,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1583580004}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1629618760
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1629618761}
+  - component: {fileID: 1629618762}
+  m_Layer: 0
+  m_Name: QooboHearing
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1629618761
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1629618760}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1112417999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1629618762
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1629618760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a93cdccfae0a93349bdcee71ef81748c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  detectionThreshold: 0.01
+  minimumInterval: 3
+  sampleDataLength: 1024
+  showDebugLogs: 1
+  showVolumeLevel: 1
+  debugUpdateInterval: 0.5
+  sceneController: {fileID: 799751467}
 --- !u!1 &1631183662
 GameObject:
   m_ObjectHideFlags: 0
