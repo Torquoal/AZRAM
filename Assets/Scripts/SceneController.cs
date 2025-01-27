@@ -48,24 +48,20 @@ public class SceneController : MonoBehaviour
         switch (direction)
         {
             case StrokeDetector.StrokeDirection.FrontToBack:
-                ShowColouredLight("happy"); 
-                ShowThought("happy");
-                SetFaceExpression("happy");
+                emotionController.SetEmotion("happy");
+                emotionController.ExpressEmotion();
                 break;
             case StrokeDetector.StrokeDirection.BackToFront:
-                ShowColouredLight("angry"); 
-                ShowThought("angry");
-                SetFaceExpression("angry");
+                emotionController.SetEmotion("angry");
+                emotionController.ExpressEmotion();
                 break;
-            case StrokeDetector.StrokeDirection.LeftToRight:
-                ShowColouredLight("surprised"); 
-                ShowThought("surprised");
-                SetFaceExpression("surprised");
+            case StrokeDetector.StrokeDirection.HoldLeft:
+                emotionController.SetEmotion("surprised");
+                emotionController.ExpressEmotion();
                 break;
-            case StrokeDetector.StrokeDirection.RightToLeft:
-                ShowColouredLight("sad"); 
-                ShowThought("sad");
-                SetFaceExpression("sad");
+            case StrokeDetector.StrokeDirection.HoldRight:
+                emotionController.SetEmotion("sad");
+                emotionController.ExpressEmotion();
                 break;
             default:
                 Debug.Log($"Unhandled stroke direction: {direction}");

@@ -51,4 +51,12 @@ public class StrokeTriggerDetector : MonoBehaviour
             mainDetector.HandleTriggerEnter(GetComponent<Collider>(), other);
         }
     }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (mainDetector != null)
+        {
+            mainDetector.HandleTriggerExit(GetComponent<Collider>(), other);
+        }
+    }
 } 
