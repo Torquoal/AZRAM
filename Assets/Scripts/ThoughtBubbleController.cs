@@ -255,12 +255,12 @@ public class ThoughtBubbleController : MonoBehaviour
             smallBubble2.transform.localPosition = small2Original + small2Offset;
             
             // Log positions occasionally to verify movement
-            if (Time.frameCount % 100 == 0)
-            {
-                Debug.Log($"Current positions - Main: {mainBubble.transform.localPosition}, " +
-                         $"Small1: {smallBubble1.transform.localPosition}, " +
-                         $"Small2: {smallBubble2.transform.localPosition}");
-            }
+            //if (Time.frameCount % 100 == 0)
+            //{
+            //    Debug.Log($"Current positions - Main: {mainBubble.transform.localPosition}, " +
+           //              $"Small1: {smallBubble1.transform.localPosition}, " +
+            //             $"Small2: {smallBubble2.transform.localPosition}");
+            //}
             
             yield return null;
         }

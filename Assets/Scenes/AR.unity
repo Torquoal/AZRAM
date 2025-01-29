@@ -4391,7 +4391,7 @@ MonoBehaviour:
   maxStrokeTime: 1.5
   triggerResetTime: 1
   strokeCooldownTime: 2
-  showDebugLogs: 1
+  showDebugLogs: 0
   sceneController: {fileID: 799751467}
   holdDuration: 2
 --- !u!1 &323811445
@@ -9428,7 +9428,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneController: {fileID: 799751467}
   emotionText: {fileID: 996060955}
-  showDebugText: 1
+  showDebugText: 0
   emotionFormat: 'Emotion: {0}'
   manualEmotion: 0
   initialEmotionDelay: 1
@@ -9447,7 +9447,7 @@ MonoBehaviour:
   qooboMesh: {fileID: 1112417998}
   angleDebugText: {fileID: 1498579920}
   arCamera: {fileID: 0}
-  showDebugRay: 1
+  showDebugRay: 0
   debugRayLength: 2
   debugRayColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
 --- !u!114 &799751473
@@ -12202,7 +12202,7 @@ MonoBehaviour:
   neutralFaceMaterial: {fileID: 2100000, guid: a2e8e5009c1821b4aad6e07ff3b3b7ce, type: 2}
   faceOffset: 0.97
   faceDiameter: 0.21
-  faceHeight: 0.16
+  faceHeight: 0.17
   curvatureAngle: 60
   curveResolution: 20
   scaleFactor: 10
@@ -20721,6 +20721,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1629618761}
   - component: {fileID: 1629618762}
+  - component: {fileID: 1629618763}
   m_Layer: 0
   m_Name: QooboHearing
   m_TagString: Untagged
@@ -20755,13 +20756,141 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a93cdccfae0a93349bdcee71ef81748c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  detectionThreshold: 0.01
-  minimumInterval: 3
+  detectionThreshold: 0.007
   sampleDataLength: 1024
   showDebugLogs: 1
-  showVolumeLevel: 1
-  debugUpdateInterval: 0.5
-  sceneController: {fileID: 799751467}
+  keywords:
+  - hello
+  - stop
+  - go
+  OnWordDetected:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &1629618763
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1629618760}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 28779cfed47441a42a6cd4fb49c8dc89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ShouldWrap: 1
+  ShouldLog: 1
+  events:
+    _onRequestOptionSetup:
+      m_PersistentCalls:
+        m_Calls: []
+    _onRequestInitialized:
+      m_PersistentCalls:
+        m_Calls: []
+    _onRequestCreated:
+      m_PersistentCalls:
+        m_Calls: []
+    _onSend:
+      m_PersistentCalls:
+        m_Calls: []
+    _onMinimumWakeThresholdHit:
+      m_PersistentCalls:
+        m_Calls: []
+    _onMicDataSent:
+      m_PersistentCalls:
+        m_Calls: []
+    _onStoppedListeningDueToDeactivation:
+      m_PersistentCalls:
+        m_Calls: []
+    _onStoppedListeningDueToInactivity:
+      m_PersistentCalls:
+        m_Calls: []
+    _onStoppedListeningDueToTimeout:
+      m_PersistentCalls:
+        m_Calls: []
+    _onAborting:
+      m_PersistentCalls:
+        m_Calls: []
+    _onAborted:
+      m_PersistentCalls:
+        m_Calls: []
+    _onCanceled:
+      m_PersistentCalls:
+        m_Calls: []
+    _onRawResponse:
+      m_PersistentCalls:
+        m_Calls: []
+    _onPartialResponse:
+      m_PersistentCalls:
+        m_Calls: []
+    _onResponse:
+      m_PersistentCalls:
+        m_Calls: []
+    _onError:
+      m_PersistentCalls:
+        m_Calls: []
+    _onRequestCompleted:
+      m_PersistentCalls:
+        m_Calls: []
+    _onComplete:
+      m_PersistentCalls:
+        m_Calls: []
+    _onStartListening:
+      m_PersistentCalls:
+        m_Calls: []
+    _onStoppedListening:
+      m_PersistentCalls:
+        m_Calls: []
+    _onMicLevelChanged:
+      m_PersistentCalls:
+        m_Calls: []
+    _onPartialTranscription:
+      m_PersistentCalls:
+        m_Calls: []
+    _onFullTranscription:
+      m_PersistentCalls:
+        m_Calls: []
+    _onUserPartialTranscription:
+      m_PersistentCalls:
+        m_Calls: []
+    _onUserFullTranscription:
+      m_PersistentCalls:
+        m_Calls: []
+    _onByteDataReady:
+      m_PersistentCalls:
+        m_Calls: []
+    _onByteDataSent:
+      m_PersistentCalls:
+        m_Calls: []
+    _onValidatePartialResponse:
+      m_PersistentCalls:
+        m_Calls: []
+  witRuntimeConfiguration:
+    witConfiguration: {fileID: 0}
+    minKeepAliveVolume: 0.0005
+    minKeepAliveTimeInSeconds: 2
+    minTranscriptionKeepAliveTimeInSeconds: 1
+    maxRecordingTime: 20
+    soundWakeThreshold: 0.0005
+    sampleLengthInMs: 10
+    micBufferLengthInSeconds: 1
+    maxConcurrentRequests: 5
+    sendAudioToWit: 1
+    customTranscriptionProvider: {fileID: 0}
+    alwaysRecord: 0
+    preferredActivationOffset: -0.5
+    transcribeOnly: 0
+    pubSubSettings:
+      PubSubTopicId: 
+      PublishOptions:
+        transcriptionResponses: 1
+        composerResponses: 1
+      SubscribeOptions:
+        transcriptionResponses: 1
+        composerResponses: 1
+  usePlatformServices: 0
+  enableConsoleLogging: 0
+  sendTranscriptionEventsForMessages: 0
 --- !u!1 &1631183662
 GameObject:
   m_ObjectHideFlags: 0
@@ -20772,7 +20901,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1631183664}
   - component: {fileID: 1631183663}
-  - component: {fileID: 1631183665}
   m_Layer: 0
   m_Name: Rigidbody
   m_TagString: Untagged
@@ -20824,27 +20952,6 @@ Transform:
   - {fileID: 83138417}
   m_Father: {fileID: 1011549760}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1631183665
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1631183662}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40879236e34b49846922bf6b8e962813, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  hand: {fileID: 1848291534}
-  palmColliderRadius: 0.03
-  fingerColliderRadius: 0.01
-  showDebugGizmos: 1
-  createPalmCollider: 1
-  createFingertipColliders: 1
-  showDebugLogs: 1
-  palmCollider: {fileID: 0}
-  fingertipColliders: []
 --- !u!1 &1643199781
 GameObject:
   m_ObjectHideFlags: 0

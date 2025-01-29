@@ -135,7 +135,7 @@ public class LightEmissionSphere : MonoBehaviour
                 1f
             );
             
-            Debug.Log($"Setting emission color: {brightColor}, Intensity: {intensity * 20f}, Transparency: {transparency}");
+            //Debug.Log($"Setting emission color: {brightColor}, Intensity: {intensity * 20f}, Transparency: {transparency}");
             
             emissionMaterial.SetColor("_EmissionColor", brightColor);
             emissionMaterial.SetFloat("_EmissionIntensity", intensity * 20f);

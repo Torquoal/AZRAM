@@ -109,7 +109,7 @@ public class QooboPositioner : MonoBehaviour
                     }
                     else
                     {
-                        Debug.Log("Pinch detected but wake-up sequence is complete - ignoring");
+                        //Debug.Log("Pinch detected but wake-up sequence is complete - ignoring");
                     }
                 }
                 else
