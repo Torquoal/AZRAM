@@ -1,65 +1,67 @@
 using UnityEngine;
-using System.IO;
 using UnityEngine.Events;
+using System;
 
 public class VoiceDetector : MonoBehaviour
 {
-    [Header("Detection Settings")]
-    [SerializeField] private float detectionThreshold = 0.01f;
-    [SerializeField] private int sampleDataLength = 1024;
-    [SerializeField] private bool showDebugLogs = true;
-    [SerializeField] private string[] keywords = new string[] { "hello", "stop", "go" }; // Add your keywords here
-
+    [Header("Settings")]
+    [SerializeField] private bool useDefaultMicrophone = false;
+    [SerializeField] private bool monitorAudio = false;
+    [SerializeField] [Range(0f, 1f)] private float monitorVolume = 0.5f;
+    
     [Header("Events")]
     public UnityEvent<string> OnWordDetected;
 
     private AudioClip microphoneClip;
-    private float[] sampleData;
+    private float[] audioBuffer;
     private string selectedDevice;
     private bool isListening = false;
-    private bool isProcessing = false;
-    private float lastProcessTime = 0f;
-    private const float PROCESS_INTERVAL = 0.5f; // Time between processing attempts
-
-    // Buffer for storing audio when volume is above threshold
-    private float[] audioBuffer;
-    private int bufferSize = 16000; // 1 second at 16kHz
-    private int bufferIndex = 0;
-    private bool isBuffering = false;
+    private VoskRecognizer vosk;
+    private AudioSource monitorSource;
+    private int lastProcessedPosition = 0;
 
     private void Start()
     {
-        Debug.Log("VoiceDetector: Starting...");
-        sampleData = new float[sampleDataLength];
-        audioBuffer = new float[bufferSize];
+        // Initialize Vosk
+        vosk = new VoskRecognizer();
+        if (!vosk.Initialize(16000))
+        {
+            Debug.LogError("Failed to initialize Vosk");
+            return;
+        }
+
         InitializeMicrophone();
     }
 
     private void InitializeMicrophone()
     {
         // List available microphones
-        Debug.Log("VoiceDetector: Available microphones:");
+        Debug.Log("Available microphones:");
         foreach (string device in Microphone.devices)
         {
             Debug.Log($"- {device}");
         }
 
-        // Try to find the Quest/Oculus microphone
-        foreach (string device in Microphone.devices)
-        {
-            if (device.Contains("Oculus") || device.Contains("Quest") || device.Contains("Meta") || device.Contains("VR"))
-            {
-                selectedDevice = device;
-                Debug.Log($"VoiceDetector: Found VR headset microphone: {device}");
-                break;
-            }
-        }
-
-        // If no VR mic found, use the first available one
-        if (string.IsNullOrEmpty(selectedDevice) && Microphone.devices.Length > 0)
+        // Select microphone
+        if (useDefaultMicrophone && Microphone.devices.Length > 0)
         {
             selectedDevice = Microphone.devices[0];
-            Debug.Log($"VoiceDetector: No VR microphone found, using default: {selectedDevice}");
+        }
+        else
+        {
+            foreach (string device in Microphone.devices)
+            {
+                if (device.Contains("Oculus") || device.Contains("Quest") || device.Contains("Meta") || device.Contains("VR"))
+                {
+                    selectedDevice = device;
+                    break;
+                }
+            }
+
+            if (string.IsNullOrEmpty(selectedDevice) && Microphone.devices.Length > 0)
+            {
+                selectedDevice = Microphone.devices[0];
+            }
         }
 
         if (!string.IsNullOrEmpty(selectedDevice))
@@ -68,120 +70,124 @@ public class VoiceDetector : MonoBehaviour
         }
         else
         {
-            Debug.LogError("VoiceDetector: No microphone found!");
+            Debug.LogError("No microphone found!");
         }
     }
 
     private void StartListening()
     {
-        Debug.Log($"VoiceDetector: Starting microphone on device: {selectedDevice}");
+        Debug.Log($"Starting microphone: {selectedDevice}");
         
-        // Start recording (loop indefinitely)
-        microphoneClip = Microphone.Start(selectedDevice, true, 1, AudioSettings.outputSampleRate);
+        // Start recording
+        microphoneClip = Microphone.Start(selectedDevice, true, 1, 16000);
         
         if (microphoneClip == null)
         {
-            Debug.LogError("VoiceDetector: Failed to create microphone AudioClip!");
+            Debug.LogError("Failed to start microphone!");
             return;
         }
 
-        // Wait until the microphone starts recording
-        while (!(Microphone.GetPosition(selectedDevice) > 0)) { }
+        Debug.Log($"Microphone format - Frequency: {microphoneClip.frequency}Hz, Channels: {microphoneClip.channels}, Length: {microphoneClip.length}s, Samples: {microphoneClip.samples}");
 
+        // Set up audio monitoring
+        if (monitorAudio)
+        {
+            monitorSource = gameObject.AddComponent<AudioSource>();
+            monitorSource.clip = microphoneClip;
+            monitorSource.loop = true;
+            monitorSource.volume = monitorVolume;
+            monitorSource.Play();
+        }
+
+        audioBuffer = new float[microphoneClip.samples * microphoneClip.channels];
+        lastProcessedPosition = 0;
         isListening = true;
-        Debug.Log($"VoiceDetector: Microphone started successfully. Sample rate: {AudioSettings.outputSampleRate}Hz");
     }
 
     private void Update()
     {
         if (!isListening) return;
 
-        int micPosition = Microphone.GetPosition(selectedDevice);
-        if (micPosition < 0) return;
-
-        // Get current audio data
-        microphoneClip.GetData(sampleData, micPosition);
-
-        // Calculate volume
-        float sum = 0;
-        for (int i = 0; i < sampleData.Length; i++)
+        // Update monitor volume
+        if (monitorSource != null)
         {
-            sum += Mathf.Abs(sampleData[i]);
+            monitorSource.volume = monitorAudio ? monitorVolume : 0f;
         }
-        float averageVolume = sum / sampleData.Length;
 
-        // Handle audio buffering when volume is above threshold
-        if (averageVolume > detectionThreshold)
+        // Get current position and audio data
+        int currentPosition = Microphone.GetPosition(selectedDevice);
+        if (currentPosition < 0) return;
+
+        // Calculate how many new samples we have
+        int newSamples;
+        if (currentPosition < lastProcessedPosition)
         {
-            if (!isBuffering)
+            // Buffer wrapped around
+            newSamples = (microphoneClip.samples - lastProcessedPosition) + currentPosition;
+        }
+        else
+        {
+            newSamples = currentPosition - lastProcessedPosition;
+        }
+
+        if (newSamples > 0)
+        {
+            // Create buffer for new data
+            float[] newData = new float[newSamples];
+            
+            if (currentPosition < lastProcessedPosition)
             {
-                isBuffering = true;
-                bufferIndex = 0;
-                if (showDebugLogs) Debug.Log("VoiceDetector: Started buffering audio");
+                // Handle buffer wrap-around
+                int samplesAtEnd = microphoneClip.samples - lastProcessedPosition;
+                
+                // Get samples at the end
+                microphoneClip.GetData(newData, lastProcessedPosition);
+                
+                if (currentPosition > 0)
+                {
+                    // Get samples from the beginning
+                    float[] wrappedData = new float[currentPosition];
+                    microphoneClip.GetData(wrappedData, 0);
+                    System.Array.Copy(wrappedData, 0, newData, samplesAtEnd, currentPosition);
+                }
+            }
+            else
+            {
+                // Get continuous chunk of new data
+                microphoneClip.GetData(newData, lastProcessedPosition);
             }
 
-            // Add current samples to buffer
-            for (int i = 0; i < sampleData.Length && bufferIndex < bufferSize; i++)
+            // Process only the new audio data
+            string result = vosk.ProcessAudio(newData);
+            if (!string.IsNullOrEmpty(result))
             {
-                audioBuffer[bufferIndex++] = sampleData[i];
+                Debug.Log($"Detected: {result}");
+                OnWordDetected?.Invoke(result);
             }
 
-            // If buffer is full, process it
-            if (bufferIndex >= bufferSize && !isProcessing && Time.time - lastProcessTime > PROCESS_INTERVAL)
-            {
-                ProcessAudioBuffer();
-            }
+            lastProcessedPosition = currentPosition;
         }
-        else if (isBuffering)
-        {
-            // Volume dropped below threshold, process what we have if enough data
-            if (bufferIndex > bufferSize / 4) // Process if we have at least 1/4 of the buffer
-            {
-                ProcessAudioBuffer();
-            }
-            isBuffering = false;
-        }
-
-        // Log if volume exceeds threshold
-        if (averageVolume > detectionThreshold && showDebugLogs)
-        {
-            Debug.Log($"VoiceDetector: Sound detected! Volume: {averageVolume:F5}");
-        }
-    }
-
-    private void ProcessAudioBuffer()
-    {
-        isProcessing = true;
-        lastProcessTime = Time.time;
-
-        // TODO: Add PocketSphinx processing here
-        // For now, we'll just log that we would process the audio
-        if (showDebugLogs)
-        {
-            Debug.Log($"VoiceDetector: Would process {bufferIndex} samples of audio");
-        }
-
-        // Reset buffer
-        bufferIndex = 0;
-        isProcessing = false;
     }
 
     private void OnDisable()
     {
         if (isListening)
         {
+            if (monitorSource != null)
+            {
+                monitorSource.Stop();
+                Destroy(monitorSource);
+            }
             Microphone.End(selectedDevice);
             isListening = false;
-            Debug.Log("VoiceDetector: Stopped listening");
         }
     }
 
     private void OnDestroy()
     {
-        if (isListening)
+        if (vosk != null)
         {
-            Microphone.End(selectedDevice);
-            isListening = false;
+            vosk.Cleanup();
         }
     }
 }
