@@ -7,6 +7,7 @@ public class FaceAnimationController : MonoBehaviour
     [Header("Animation Settings")]
     [SerializeField] private string neutralLoopPath = "NeutralLoop";  // Path in Resources folder
     [SerializeField] private string happyLoopPath = "HappyLoop";      // Path for happy animation
+    [SerializeField] private string angryLoopPath = "AngryLoop";      // Path for angry animation
     [SerializeField] private float frameRate = 24f;      // Animation frame rate
 
     // Future emotion animation paths
@@ -22,11 +23,9 @@ public class FaceAnimationController : MonoBehaviour
     [Header("Animation Behavior")]
     [SerializeField] private bool loopNeutralAnimation = true;
     [SerializeField] private bool loopHappyAnimation = true;
+    [SerializeField] private bool loopAngryAnimation = true;
     /*
     [SerializeField] private bool loopSadAnimation = false;
-    [SerializeField] private bool loopAngryAnimation = false;
-    [SerializeField] private bool loopScaredAnimation = false;
-    [SerializeField] private bool loopSurprisedAnimation = false;
     */
     
     private Material animatedMaterial;
@@ -36,9 +35,9 @@ public class FaceAnimationController : MonoBehaviour
     private Coroutine animationCoroutine;
     private Texture2D[] neutralFrames;
     private Texture2D[] happyFrames;
+    private Texture2D[] angryFrames;
     /*
     private Texture2D[] sadFrames;
-    private Texture2D[] angryFrames;
     private Texture2D[] scaredFrames;
     private Texture2D[] surprisedFrames;
     */
@@ -55,9 +54,10 @@ public class FaceAnimationController : MonoBehaviour
 
     private void LoadAnimationFrames()
     {
-        // Load neutral and happy animation frames
+        // Load neutral, happy and angry animation frames
         LoadFramesForEmotion(neutralLoopPath, ref neutralFrames);
         LoadFramesForEmotion(happyLoopPath, ref happyFrames);
+        LoadFramesForEmotion(angryLoopPath, ref angryFrames);
 
         // Future emotion frame loading
         /*
@@ -144,6 +144,10 @@ public class FaceAnimationController : MonoBehaviour
             case "happy":
                 targetFrames = happyFrames;
                 shouldLoop = loopHappyAnimation;
+                break;
+            case "angry":
+                targetFrames = angryFrames;
+                shouldLoop = loopAngryAnimation;
                 break;
             default:
                 Debug.LogWarning($"Unknown emotion for animation: {emotion}");

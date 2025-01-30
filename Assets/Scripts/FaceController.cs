@@ -205,7 +205,15 @@ public class FaceController : MonoBehaviour
                 targetMaterial = sadFaceMaterial;
                 break;
             case "angry":
-                targetMaterial = angryFaceMaterial;
+                if (faceAnimationController != null)
+                {
+                    targetMaterial = faceAnimationController.GetAnimatedMaterial();
+                    shouldAnimate = true;
+                }
+                else
+                {
+                    targetMaterial = angryFaceMaterial;
+                }
                 break;
             case "scared":
                 targetMaterial = scaredFaceMaterial;
