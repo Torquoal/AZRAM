@@ -6,6 +6,7 @@ public class FaceAnimationController : MonoBehaviour
 {
     [Header("Animation Settings")]
     [SerializeField] private string neutralLoopPath = "NeutralLoop";  // Path in Resources folder
+    [SerializeField] private string happyLoopPath = "HappyLoop";      // Path for happy animation
     [SerializeField] private float frameRate = 24f;      // Animation frame rate
 
     // Future emotion animation paths
@@ -20,8 +21,8 @@ public class FaceAnimationController : MonoBehaviour
 
     [Header("Animation Behavior")]
     [SerializeField] private bool loopNeutralAnimation = true;
+    [SerializeField] private bool loopHappyAnimation = true;
     /*
-    [SerializeField] private bool loopHappyAnimation = false;
     [SerializeField] private bool loopSadAnimation = false;
     [SerializeField] private bool loopAngryAnimation = false;
     [SerializeField] private bool loopScaredAnimation = false;
@@ -34,8 +35,8 @@ public class FaceAnimationController : MonoBehaviour
     private bool isPlaying = false;
     private Coroutine animationCoroutine;
     private Texture2D[] neutralFrames;
-    /*
     private Texture2D[] happyFrames;
+    /*
     private Texture2D[] sadFrames;
     private Texture2D[] angryFrames;
     private Texture2D[] scaredFrames;
@@ -54,8 +55,9 @@ public class FaceAnimationController : MonoBehaviour
 
     private void LoadAnimationFrames()
     {
-        // Load neutral animation frames
+        // Load neutral and happy animation frames
         LoadFramesForEmotion(neutralLoopPath, ref neutralFrames);
+        LoadFramesForEmotion(happyLoopPath, ref happyFrames);
 
         // Future emotion frame loading
         /*
@@ -126,6 +128,9 @@ public class FaceAnimationController : MonoBehaviour
 
     public void StartAnimation(string emotion)
     {
+        // Always stop any current animation first
+        StopAnimation();
+
         Texture2D[] targetFrames = null;
         bool shouldLoop = false;
 
@@ -136,84 +141,66 @@ public class FaceAnimationController : MonoBehaviour
                 targetFrames = neutralFrames;
                 shouldLoop = loopNeutralAnimation;
                 break;
-            /*
             case "happy":
                 targetFrames = happyFrames;
                 shouldLoop = loopHappyAnimation;
                 break;
-            case "sad":
-                targetFrames = sadFrames;
-                shouldLoop = loopSadAnimation;
-                break;
-            case "angry":
-                targetFrames = angryFrames;
-                shouldLoop = loopAngryAnimation;
-                break;
-            case "scared":
-                targetFrames = scaredFrames;
-                shouldLoop = loopScaredAnimation;
-                break;
-            case "surprised":
-                targetFrames = surprisedFrames;
-                shouldLoop = loopSurprisedAnimation;
-                break;
-            */
             default:
-                Debug.LogWarning($"Animation for emotion {emotion} not implemented yet");
+                Debug.LogWarning($"Unknown emotion for animation: {emotion}");
                 return;
         }
 
-        if (targetFrames == null || targetFrames.Length == 0)
+        if (targetFrames != null && targetFrames.Length > 0)
         {
-            Debug.LogWarning($"No frames loaded for {emotion} animation!");
-            return;
-        }
-
-        if (!isPlaying)
-        {
+            currentFrame = 0;
             isPlaying = true;
-            if (animationCoroutine != null)
-            {
-                StopCoroutine(animationCoroutine);
-            }
-            animationCoroutine = StartCoroutine(AnimateSequence(targetFrames, shouldLoop));
+            animationCoroutine = StartCoroutine(AnimateFrames(targetFrames, shouldLoop));
+            Debug.Log($"Started {emotion} animation with {targetFrames.Length} frames, loop={shouldLoop}");
+        }
+        else
+        {
+            Debug.LogError($"No frames available for {emotion} animation");
         }
     }
 
     public void StopAnimation()
     {
-        isPlaying = false;
         if (animationCoroutine != null)
         {
             StopCoroutine(animationCoroutine);
             animationCoroutine = null;
+            Debug.Log("Stopped current animation");
         }
+        isPlaying = false;
     }
 
-    private IEnumerator AnimateSequence(Texture2D[] frames, bool loop)
+    private IEnumerator AnimateFrames(Texture2D[] frames, bool loop)
     {
-        currentFrame = 0;
-        
-        do
+        while (isPlaying)
         {
-            animatedMaterial.mainTexture = frames[currentFrame];
-            yield return new WaitForSeconds(frameInterval);
-            
-            currentFrame++;
             if (currentFrame >= frames.Length)
             {
                 if (loop)
                 {
                     currentFrame = 0;
+                    Debug.Log("Animation loop restarting");
                 }
                 else
                 {
                     isPlaying = false;
+                    Debug.Log("Animation completed (not looping)");
                     break;
                 }
             }
+
+            if (frames[currentFrame] != null)
+            {
+                animatedMaterial.mainTexture = frames[currentFrame];
+            }
+            
+            currentFrame++;
+            yield return new WaitForSeconds(frameInterval);
         }
-        while (isPlaying);
     }
 
     // Future animation control methods

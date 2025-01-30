@@ -7,7 +7,8 @@ public class StrokeTriggerDetector : MonoBehaviour
         Front,
         Back,
         Left,
-        Right
+        Right,
+        Top
     }
 
     [SerializeField] private StrokeDetector mainDetector;
@@ -40,6 +41,9 @@ public class StrokeTriggerDetector : MonoBehaviour
                 break;
             case TriggerType.Right:
                 mainDetector.SetRightTrigger(col);
+                break;
+            case TriggerType.Top:
+                mainDetector.SetTopTrigger(col);
                 break;
         }
     }

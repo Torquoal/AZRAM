@@ -46,9 +46,10 @@ public class FaceController : MonoBehaviour
         CreateCurvedFaceMesh();
         SetupMaterialProperties();
         
-        // Start with face invisible
-        SetFaceVisibility(0f);
-        SetFaceExpression("neutral"); // Start with neutral expression
+        // Ensure face starts completely invisible
+        currentAlpha = 0f;
+        faceMeshRenderer.enabled = false;  // Disable renderer completely
+        SetFaceExpression("neutral"); // Start with neutral expression but invisible
         
         Debug.Log($"Face mesh created with settings: Scale={scaleFactor}, Height={faceHeight}, Diameter={faceDiameter}, Curvature={curvatureAngle}");
     }
@@ -84,47 +85,39 @@ public class FaceController : MonoBehaviour
                 // Force unlit shader and configure it
                 instanceMat.shader = Shader.Find("Universal Render Pipeline/Unlit");
                 
+                // Configure transparency
+                instanceMat.SetInt("_Surface", 1); // 1 = Transparent
+                instanceMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+                instanceMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+                instanceMat.SetInt("_ZWrite", 0);
+                instanceMat.SetFloat("_Blend", 0);
+                instanceMat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                instanceMat.EnableKeyword("_ALPHABLEND_ON");
+                
+                // Set initial color with zero alpha
+                Color color = instanceMat.color;
+                color.a = 0f;
+                instanceMat.color = color;
+                
                 // Ensure the material is completely unaffected by lighting
                 instanceMat.DisableKeyword("_ENVIRONMENTREFLECTIONS_OFF");
                 instanceMat.DisableKeyword("_SPECULARHIGHLIGHTS_OFF");
                 instanceMat.DisableKeyword("_RECEIVE_SHADOWS_OFF");
                 instanceMat.SetFloat("_EnvironmentReflections", 0f);
                 instanceMat.SetFloat("_SpecularHighlights", 0f);
-                instanceMat.SetInt("_Surface", 1); // 1 = Transparent
-                
-                // Configure transparency
-                instanceMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-                instanceMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-                instanceMat.SetInt("_ZWrite", 0);
-                instanceMat.SetFloat("_Blend", 0);
                 
                 // Ensure back-face culling is enabled
                 instanceMat.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Back);
                 
                 // Set render queue for transparency
                 instanceMat.renderQueue = 3000;
-                
-                // Disable all lighting-related features
-                instanceMat.SetShaderPassEnabled("ShadowCaster", false);
-                instanceMat.SetShaderPassEnabled("DepthOnly", false);
-                instanceMat.SetShaderPassEnabled("Universal2D", true);
-                
-                // Replace the original material reference with the instance
-                if (mat == defaultFaceMaterial) defaultFaceMaterial = instanceMat;
-                else if (mat == happyFaceMaterial) happyFaceMaterial = instanceMat;
-                else if (mat == sadFaceMaterial) sadFaceMaterial = instanceMat;
-                else if (mat == angryFaceMaterial) angryFaceMaterial = instanceMat;
-                else if (mat == scaredFaceMaterial) scaredFaceMaterial = instanceMat;
-                else if (mat == surprisedFaceMaterial) surprisedFaceMaterial = instanceMat;
-                else if (mat == neutralFaceMaterial) neutralFaceMaterial = instanceMat;
-                
-                Debug.Log($"Configured unlit material instance: {instanceMat.name}");
             }
         }
 
-        // Set the mesh renderer to not cast or receive shadows
+        // Disable shadows and configure renderer
         faceMeshRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         faceMeshRenderer.receiveShadows = false;
+        faceMeshRenderer.enabled = false;  // Start with renderer disabled
     }
 
     private void CreateCurvedFaceMesh()
@@ -198,7 +191,15 @@ public class FaceController : MonoBehaviour
         switch (expression.ToLower())
         {
             case "happy":
-                targetMaterial = happyFaceMaterial;
+                if (faceAnimationController != null)
+                {
+                    targetMaterial = faceAnimationController.GetAnimatedMaterial();
+                    shouldAnimate = true;
+                }
+                else
+                {
+                    targetMaterial = happyFaceMaterial;
+                }
                 break;
             case "sad":
                 targetMaterial = sadFaceMaterial;
@@ -243,7 +244,7 @@ public class FaceController : MonoBehaviour
             // Start animation if using animated face
             if (shouldAnimate && faceAnimationController != null)
             {
-                faceAnimationController.StartAnimation();
+                faceAnimationController.StartAnimation(expression.ToLower());
                 isUsingAnimatedFace = true;
             }
             else
@@ -290,6 +291,17 @@ public class FaceController : MonoBehaviour
     public void SetFaceVisibility(float alpha)
     {
         currentAlpha = alpha;
+        
+        // Enable/disable renderer based on alpha
+        if (alpha <= 0f)
+        {
+            faceMeshRenderer.enabled = false;
+        }
+        else if (!faceMeshRenderer.enabled)
+        {
+            faceMeshRenderer.enabled = true;
+        }
+
         if (currentMaterial != null)
         {
             if (isUsingAnimatedFace && faceAnimationController != null)

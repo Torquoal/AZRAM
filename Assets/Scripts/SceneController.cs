@@ -15,8 +15,6 @@ public class SceneController : MonoBehaviour
     [SerializeField] private StrokeDetector strokeDetector;
 
     private bool isWakingUp = false;
-    private bool wasHoveringDuringWakeUp = false;
-    private GameObject hoveringObject = null;
     private bool wakeUpComplete = false;
 
     void Start()
@@ -61,6 +59,10 @@ public class SceneController : MonoBehaviour
                 break;
             case StrokeDetector.StrokeDirection.HoldRight:
                 emotionController.SetEmotion("sad");
+                emotionController.ExpressEmotion();
+                break;
+            case StrokeDetector.StrokeDirection.HoldTop:
+                emotionController.SetEmotion("happy");  
                 emotionController.ExpressEmotion();
                 break;
             default:
@@ -224,9 +226,14 @@ public class SceneController : MonoBehaviour
     {
         isWakingUp = true;
         wakeUpComplete = false;
-        wasHoveringDuringWakeUp = false;
-        hoveringObject = null;
         Debug.Log("Starting wake-up sequence");
+
+        // Show sleep thought bubble
+        if (thoughtBubble != null)
+        {
+            thoughtBubble.ShowThought("sleep");
+            yield return new WaitForSeconds(4f);  // Show sleep thought for a moment
+        }
 
         // Set neutral face at start (invisible)
         if (faceController != null)
@@ -238,13 +245,18 @@ public class SceneController : MonoBehaviour
         // Play initial wake up sound
         PlaySound("peep");
 
+        // Hide thought bubble as face starts to appear
+        if (thoughtBubble != null)
+        {
+            thoughtBubble.HideThought();
+        }
+
         // Start face fade in
         if (faceController != null)
         {
             faceController.StartFadeIn();
         }
 
-        // Wait for 2 seconds
         yield return new WaitForSeconds(2f);
 
         // Play second wake up sound
@@ -254,35 +266,10 @@ public class SceneController : MonoBehaviour
         wakeUpComplete = true;
         Debug.Log("Wake-up sequence complete");
 
-        // Check if something was hovering during wake-up
-        if (wasHoveringDuringWakeUp && hoveringObject != null)
-        {
-            // Trigger hover effect that was waiting
-            ShowColouredLight("happy");
-        }
+      
     }
 
-    // Call this from your hover detection script
-    public void OnObjectHover(GameObject hoveredObject)
-    {
-        if (isWakingUp)
-        {
-            wasHoveringDuringWakeUp = true;
-            hoveringObject = hoveredObject;
-            return;
-        }
-
-        // Express happiness when hovered
-        if (emotionController != null)
-        {
-            emotionController.SetHappy();
-        }
-        else
-        {
-            // Fallback to old behavior if emotionController not set
-            ShowColouredLight("happy");
-        }
-    }
+   
 
     public bool IsWakeUpComplete()
     {

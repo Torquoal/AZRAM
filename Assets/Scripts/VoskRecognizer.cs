@@ -28,13 +28,20 @@ public class VoskRecognizer
     private IntPtr model;
     private IntPtr recognizer;
     private bool isInitialized;
+    private bool showDebugLogs = false;  // Debug log control
+
+    public void SetDebugLogging(bool enabled)
+    {
+        showDebugLogs = enabled;
+    }
 
     public bool Initialize(int sampleRate = 16000)
     {
         try
         {
             string modelPath = System.IO.Path.Combine(Application.streamingAssetsPath, "VoskModel");
-            Debug.Log($"VoskRecognizer: Loading model from {modelPath}");
+            if (showDebugLogs)
+                Debug.Log($"VoskRecognizer: Loading model from {modelPath}");
 
             model = vosk_model_new(modelPath);
             if (model == IntPtr.Zero)
@@ -52,7 +59,8 @@ public class VoskRecognizer
             }
 
             isInitialized = true;
-            Debug.Log("VoskRecognizer: Initialized successfully");
+            if (showDebugLogs)
+                Debug.Log("VoskRecognizer: Initialized successfully");
             return true;
         }
         catch (Exception e)
@@ -70,9 +78,6 @@ public class VoskRecognizer
 
         try
         {
-            // Log audio format details
-            Debug.Log($"Processing audio - Buffer length: {audioData.Length} samples");
-
             // Convert float audio to 16-bit PCM
             short[] pcmData = new short[audioData.Length];
             
@@ -85,7 +90,6 @@ public class VoskRecognizer
                 minAmp = Mathf.Min(minAmp, audioData[i]);
                 pcmData[i] = (short)(audioData[i] * 32768f);
             }
-            Debug.Log($"Audio range - Min: {minAmp:F3}, Max: {maxAmp:F3}, PCM range will be: {minAmp * 32768:F0} to {maxAmp * 32768:F0}");
 
             // Process the audio
             if (vosk_recognizer_accept_waveform(recognizer, pcmData, pcmData.Length))
@@ -94,7 +98,8 @@ public class VoskRecognizer
                 if (resultPtr != IntPtr.Zero)
                 {
                     string result = Marshal.PtrToStringAnsi(resultPtr);
-                    Debug.Log($"VoskRecognizer: Raw result: {result}");
+                    if (showDebugLogs)
+                        Debug.Log($"VoskRecognizer: Raw result: {result}");
                     return result;
                 }
             }
@@ -105,7 +110,8 @@ public class VoskRecognizer
                 if (partialPtr != IntPtr.Zero)
                 {
                     string partial = Marshal.PtrToStringAnsi(partialPtr);
-                    Debug.Log($"VoskRecognizer: Raw partial: {partial}");
+                    if (showDebugLogs)
+                        Debug.Log($"VoskRecognizer: Raw partial: {partial}");
                 }
             }
         }

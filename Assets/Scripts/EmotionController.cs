@@ -15,6 +15,13 @@ public class EmotionController : MonoBehaviour
     [Header("Emotion Control")]
     [SerializeField] private Emotion manualEmotion = Emotion.Neutral;
     [SerializeField] private float initialEmotionDelay = 1f;
+    [SerializeField] private float emotionCooldown = 2f;  // Cooldown period before another emotion can be expressed
+    [SerializeField] private float emotionDuration = 10f;  // Duration before returning to neutral
+
+    private Emotion currentEmotion = Emotion.Neutral;
+    private bool hasInitialized = false;
+    private float lastEmotionTime = -999f;  // Track when the last emotion was expressed
+    private Coroutine resetCoroutine;  // Track the auto-reset coroutine
 
     public enum Emotion
     {
@@ -25,9 +32,6 @@ public class EmotionController : MonoBehaviour
         Surprised,
         Neutral
     }
-
-    private Emotion currentEmotion = Emotion.Neutral;
-    private bool hasInitialized = false;
 
     private void Start()
     {
@@ -69,6 +73,13 @@ public class EmotionController : MonoBehaviour
 
     public void SetEmotion(Emotion emotion)
     {
+        // Check if we're in cooldown
+        if (Time.time - lastEmotionTime < emotionCooldown)
+        {
+            Debug.Log($"Emotion in cooldown. Remaining: {emotionCooldown - (Time.time - lastEmotionTime):F2}s");
+            return;
+        }
+
         currentEmotion = emotion;
         manualEmotion = emotion; // Keep inspector value in sync
         
@@ -114,6 +125,12 @@ public class EmotionController : MonoBehaviour
     {
         if (sceneController == null) return;
 
+        // Cancel any pending reset
+        if (resetCoroutine != null)
+        {
+            StopCoroutine(resetCoroutine);
+        }
+
         string emotionName = currentEmotion.ToString().ToLower();
         
         // Trigger all expression methods
@@ -123,7 +140,34 @@ public class EmotionController : MonoBehaviour
         sceneController.SetFaceExpression(emotionName);
         sceneController.TailsEmotion(emotionName);
 
+        // Update last emotion time
+        lastEmotionTime = Time.time;
+
+        // Start auto-reset timer if not neutral
+        if (currentEmotion != Emotion.Neutral)
+        {
+            resetCoroutine = StartCoroutine(AutoResetEmotion());
+        }
+
         Debug.Log($"Expressing emotion: {currentEmotion}");
+    }
+
+    private IEnumerator AutoResetEmotion()
+    {
+        yield return new WaitForSeconds(emotionDuration);
+
+        // Reset to neutral state
+        sceneController.HideLightSphere();
+        sceneController.HideThought();
+        sceneController.SetFaceExpression("neutral");
+        sceneController.TailsEmotion("neutral");
+
+        // Update internal state
+        currentEmotion = Emotion.Neutral;
+        manualEmotion = Emotion.Neutral;
+        UpdateEmotionDisplay();
+
+        Debug.Log("Auto-reset to neutral state");
     }
 
     public Emotion GetCurrentEmotion()
@@ -169,4 +213,19 @@ public class EmotionController : MonoBehaviour
 
     [ContextMenu("Express Neutral")]
     private void ExpressNeutral() => SetNeutral();
+
+    // Add this method to handle voice-detected emotions
+    public void HandleVoiceEmotion(string emotion)
+    {
+        // Convert the emotion string to our enum
+        if (System.Enum.TryParse<Emotion>(emotion, true, out Emotion detectedEmotion))
+        {
+            SetEmotion(detectedEmotion);
+            ExpressEmotion();
+        }
+        else
+        {
+            Debug.LogWarning($"EmotionController: Couldn't parse emotion string: {emotion}");
+        }
+    }
 } 

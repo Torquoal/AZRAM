@@ -27,6 +27,7 @@ public class StrokeDetector : MonoBehaviour
     private Collider backCollider;
     private Collider leftCollider;
     private Collider rightCollider;
+    private Collider topCollider;  // New top collider
 
     public enum StrokeDirection
     {
@@ -34,7 +35,8 @@ public class StrokeDetector : MonoBehaviour
         FrontToBack,
         BackToFront,
         HoldLeft,
-        HoldRight
+        HoldRight,
+        HoldTop     // New top hold direction
     }
 
     private enum StrokeType
@@ -66,8 +68,10 @@ public class StrokeDetector : MonoBehaviour
 
     private float leftHoldStartTime = -1f;
     private float rightHoldStartTime = -1f;
+    private float topHoldStartTime = -1f;  // New top hold timer
     private bool leftHoldTriggered = false;
     private bool rightHoldTriggered = false;
+    private bool topHoldTriggered = false;  // New top hold flag
 
     public delegate void StrokeDetectedHandler(StrokeDirection direction);
     public event StrokeDetectedHandler OnStrokeDetected;
@@ -108,6 +112,13 @@ public class StrokeDetector : MonoBehaviour
         rightCollider = col;
         if (showDebugLogs)
             Debug.Log($"Right trigger set to: {col.name}");
+    }
+
+    public void SetTopTrigger(Collider col)
+    {
+        topCollider = col;
+        if (showDebugLogs)
+            Debug.Log($"Top trigger set to: {col.name}");
     }
 
     private void Update()
@@ -151,6 +162,23 @@ public class StrokeDetector : MonoBehaviour
                     rightHoldTriggered = true;
                 }
             }
+            // Check top hold
+            else if (activeCollider == topCollider)
+            {
+                if (topHoldStartTime < 0)
+                {
+                    topHoldStartTime = Time.time;
+                    if (showDebugLogs)
+                        Debug.Log("Started top hold timer");
+                }
+                else if (!topHoldTriggered && Time.time - topHoldStartTime >= holdDuration)
+                {
+                    if (showDebugLogs)
+                        Debug.Log("Top hold detected!");
+                    OnStrokeDetected?.Invoke(StrokeDirection.HoldTop);
+                    topHoldTriggered = true;
+                }
+            }
         }
 
         // Reset if no new triggers for a while
@@ -186,11 +214,11 @@ public class StrokeDetector : MonoBehaviour
         // Add to active colliders
         activeColliders.Add(triggerCollider);
 
-        // For left and right colliders, we only care about holds
-        if (triggerCollider == leftCollider || triggerCollider == rightCollider)
+        // For left, right, and top colliders, we only care about holds
+        if (triggerCollider == leftCollider || triggerCollider == rightCollider || triggerCollider == topCollider)
         {
             if (showDebugLogs)
-                Debug.Log($"Left/Right collider entered: {triggerCollider.name} - checking for hold");
+                Debug.Log($"Hold collider entered: {triggerCollider.name} - checking for hold");
             return;
         }
 
@@ -281,6 +309,13 @@ public class StrokeDetector : MonoBehaviour
             if (showDebugLogs)
                 Debug.Log("Reset right hold");
         }
+        else if (triggerCollider == topCollider)
+        {
+            topHoldStartTime = -1f;
+            topHoldTriggered = false;
+            if (showDebugLogs)
+                Debug.Log("Reset top hold");
+        }
         
         if (showDebugLogs)
             Debug.Log($"Trigger exit: {triggerCollider.name}, Active collisions: {activeColliders.Count}");
@@ -359,8 +394,10 @@ public class StrokeDetector : MonoBehaviour
         // Reset hold states
         leftHoldStartTime = -1f;
         rightHoldStartTime = -1f;
+        topHoldStartTime = -1f;  // Reset top hold timer
         leftHoldTriggered = false;
         rightHoldTriggered = false;
+        topHoldTriggered = false;  // Reset top hold flag
     }
 
     private string GetGameObjectPath(GameObject obj)

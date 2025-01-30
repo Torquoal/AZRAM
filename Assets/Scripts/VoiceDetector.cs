@@ -1,16 +1,55 @@
 using UnityEngine;
-using UnityEngine.Events;
 using System;
+using System.Collections.Generic;
 
 public class VoiceDetector : MonoBehaviour
 {
+    [SerializeField] private EmotionController emotionController;
+    [SerializeField] private SceneController sceneController;
+    [System.Serializable]
+    public class WordGroup
+    {
+        public string groupName;
+        public List<string> variations = new List<string>();
+    }
+
     [Header("Settings")]
     [SerializeField] private bool useDefaultMicrophone = false;
     [SerializeField] private bool monitorAudio = false;
     [SerializeField] [Range(0f, 1f)] private float monitorVolume = 0.5f;
-    
-    [Header("Events")]
-    public UnityEvent<string> OnWordDetected;
+    [SerializeField] private bool showDebugLogs = false;  // Debug log toggle
+
+    [Header("Voice Recognition")]
+    [SerializeField] private List<WordGroup> wordGroups = new List<WordGroup>() {
+        new WordGroup { 
+            groupName = "Name", 
+            variations = new List<string> { "qoobo", "coobo", "kubo", "cubo", "koobo" }
+        },
+        new WordGroup {
+            groupName = "Happy",
+            variations = new List<string> { "happy", "happiness", "joy", "joyful", "glad" }
+        },
+        new WordGroup {
+            groupName = "Sad",
+            variations = new List<string> { "sad", "sadness", "unhappy", "sorrow", "sorrowful" }
+        },
+        new WordGroup {
+            groupName = "Angry",
+            variations = new List<string> { "angry", "anger", "mad", "furious", "rage" }
+        },
+        new WordGroup {
+            groupName = "Greeting",
+            variations = new List<string> { "hello", "hi", "hey", "greetings" }
+        },
+        new WordGroup {
+            groupName = "Farewell",
+            variations = new List<string> { "goodbye", "bye", "farewell", "see you" }
+        },
+        new WordGroup {
+            groupName = "Praise",
+            variations = new List<string> { "good boy", "good kitty", "good robot", "nice", "well done" }
+        }
+    };
 
     private AudioClip microphoneClip;
     private float[] audioBuffer;
@@ -24,6 +63,7 @@ public class VoiceDetector : MonoBehaviour
     {
         // Initialize Vosk
         vosk = new VoskRecognizer();
+        vosk.SetDebugLogging(showDebugLogs);  // Pass debug setting to VoskRecognizer
         if (!vosk.Initialize(16000))
         {
             Debug.LogError("Failed to initialize Vosk");
@@ -36,10 +76,13 @@ public class VoiceDetector : MonoBehaviour
     private void InitializeMicrophone()
     {
         // List available microphones
-        Debug.Log("Available microphones:");
-        foreach (string device in Microphone.devices)
+        if (showDebugLogs)
         {
-            Debug.Log($"- {device}");
+            Debug.Log("Available microphones:");
+            foreach (string device in Microphone.devices)
+            {
+                Debug.Log($"- {device}");
+            }
         }
 
         // Select microphone
@@ -76,7 +119,8 @@ public class VoiceDetector : MonoBehaviour
 
     private void StartListening()
     {
-        Debug.Log($"Starting microphone: {selectedDevice}");
+        if (showDebugLogs)
+            Debug.Log($"Starting microphone: {selectedDevice}");
         
         // Start recording
         microphoneClip = Microphone.Start(selectedDevice, true, 1, 16000);
@@ -87,7 +131,7 @@ public class VoiceDetector : MonoBehaviour
             return;
         }
 
-        Debug.Log($"Microphone format - Frequency: {microphoneClip.frequency}Hz, Channels: {microphoneClip.channels}, Length: {microphoneClip.length}s, Samples: {microphoneClip.samples}");
+        //Debug.Log($"Microphone format - Frequency: {microphoneClip.frequency}Hz, Channels: {microphoneClip.channels}, Length: {microphoneClip.length}s, Samples: {microphoneClip.samples}");
 
         // Set up audio monitoring
         if (monitorAudio)
@@ -122,7 +166,6 @@ public class VoiceDetector : MonoBehaviour
         int newSamples;
         if (currentPosition < lastProcessedPosition)
         {
-            // Buffer wrapped around
             newSamples = (microphoneClip.samples - lastProcessedPosition) + currentPosition;
         }
         else
@@ -132,20 +175,15 @@ public class VoiceDetector : MonoBehaviour
 
         if (newSamples > 0)
         {
-            // Create buffer for new data
             float[] newData = new float[newSamples];
             
             if (currentPosition < lastProcessedPosition)
             {
-                // Handle buffer wrap-around
                 int samplesAtEnd = microphoneClip.samples - lastProcessedPosition;
-                
-                // Get samples at the end
                 microphoneClip.GetData(newData, lastProcessedPosition);
                 
                 if (currentPosition > 0)
                 {
-                    // Get samples from the beginning
                     float[] wrappedData = new float[currentPosition];
                     microphoneClip.GetData(wrappedData, 0);
                     System.Array.Copy(wrappedData, 0, newData, samplesAtEnd, currentPosition);
@@ -153,19 +191,79 @@ public class VoiceDetector : MonoBehaviour
             }
             else
             {
-                // Get continuous chunk of new data
                 microphoneClip.GetData(newData, lastProcessedPosition);
             }
 
-            // Process only the new audio data
             string result = vosk.ProcessAudio(newData);
             if (!string.IsNullOrEmpty(result))
             {
-                Debug.Log($"Detected: {result}");
-                OnWordDetected?.Invoke(result);
+                ProcessRecognizedSpeech(result.ToLower());
             }
 
             lastProcessedPosition = currentPosition;
+        }
+    }
+
+    private void ProcessRecognizedSpeech(string speech)
+    {
+        if (showDebugLogs)
+            Debug.Log($"Processing speech: {speech}");
+
+        // Check each word group for matches
+        foreach (var group in wordGroups)
+        {
+            foreach (var variation in group.variations)
+            {
+                if (speech.Contains(variation.ToLower()))
+                {
+                    HandleWordGroupMatch(group.groupName);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void HandleWordGroupMatch(string groupName)
+    {
+        switch (groupName)
+        {
+            case "Name":
+                if (showDebugLogs)
+                    Debug.Log("Detected: Qoobo's name was called!");
+                    sceneController.ShowThought("Exclamation");
+                break;
+
+            case "Happy":
+                if (showDebugLogs)
+                    Debug.Log("Detected: A happy word!");
+                emotionController.SetEmotion("Happy");
+                emotionController.ExpressEmotion();
+                break;
+
+            case "Sad":
+                if (showDebugLogs)
+                    Debug.Log("Detected: A sad word!");
+                break;
+
+            case "Angry":
+                if (showDebugLogs)
+                    Debug.Log("Detected: An angry word!");
+                break;
+
+            case "Greeting":
+                if (showDebugLogs)
+                    Debug.Log("Detected: A greeting!");
+                break;
+
+            case "Farewell":
+                if (showDebugLogs)
+                    Debug.Log("Detected: A farewell!");
+                break;
+
+            case "Praise":
+                if (showDebugLogs)
+                    Debug.Log("Detected: Words of praise!");
+                break;
         }
     }
 
