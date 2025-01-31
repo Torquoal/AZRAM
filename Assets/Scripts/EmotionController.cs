@@ -73,10 +73,14 @@ public class EmotionController : MonoBehaviour
 
     public void SetEmotion(Emotion emotion)
     {
+        if (showDebugText)
+            Debug.Log($"SetEmotion called with: {emotion}");
+        
         // Check if we're in cooldown
         if (Time.time - lastEmotionTime < emotionCooldown)
         {
-            Debug.Log($"Emotion in cooldown. Remaining: {emotionCooldown - (Time.time - lastEmotionTime):F2}s");
+            if (showDebugText)
+                Debug.Log($"Emotion in cooldown. Remaining: {emotionCooldown - (Time.time - lastEmotionTime):F2}s");
             return;
         }
 
@@ -93,6 +97,8 @@ public class EmotionController : MonoBehaviour
 
     public void SetEmotion(string emotionName)
     {
+        if (showDebugText)
+            Debug.Log($"SetEmotion called with string: {emotionName}");
         if (System.Enum.TryParse(emotionName, true, out Emotion emotion))
         {
             SetEmotion(emotion);
@@ -105,7 +111,7 @@ public class EmotionController : MonoBehaviour
 
     private void UpdateEmotionDisplay()
     {
-        if (emotionText != null && showDebugText)
+        if (emotionText != null)
         {
             emotionText.text = string.Format(emotionFormat, currentEmotion.ToString());
         }
@@ -114,10 +120,6 @@ public class EmotionController : MonoBehaviour
     public void SetDebugTextVisibility(bool visible)
     {
         showDebugText = visible;
-        if (emotionText != null)
-        {
-            emotionText.enabled = visible;
-        }
     }
 
     [ContextMenu("Express Emotion")]
@@ -149,7 +151,8 @@ public class EmotionController : MonoBehaviour
             resetCoroutine = StartCoroutine(AutoResetEmotion());
         }
 
-        Debug.Log($"Expressing emotion: {currentEmotion}");
+        if (showDebugText)
+            Debug.Log($"Expressing emotion: {currentEmotion}");
     }
 
     private IEnumerator AutoResetEmotion()

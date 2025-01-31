@@ -14,8 +14,14 @@ public class SceneController : MonoBehaviour
     [SerializeField] private TailAnimations tailAnimations;
     [SerializeField] private StrokeDetector strokeDetector;
 
+    [Header("Distance Settings")]
+    [SerializeField] private float maxDistance = 2.0f; // Maximum distance in meters before showing sadness
+    [SerializeField] private float distanceCheckInterval = 0.5f; // How often to check distance
+    private float lastDistanceCheckTime = 0f;
+    private bool isShowingSadness = false;
+
     private bool isWakingUp = false;
-    private bool wakeUpComplete = false;
+    public bool wakeUpComplete = false;
 
     void Start()
     {
@@ -54,12 +60,10 @@ public class SceneController : MonoBehaviour
                 emotionController.ExpressEmotion();
                 break;
             case StrokeDetector.StrokeDirection.HoldLeft:
-                emotionController.SetEmotion("surprised");
-                emotionController.ExpressEmotion();
+                ShowColouredLight("surprised");
                 break;
             case StrokeDetector.StrokeDirection.HoldRight:
-                emotionController.SetEmotion("sad");
-                emotionController.ExpressEmotion();
+                ShowThought("heart");
                 break;
             case StrokeDetector.StrokeDirection.HoldTop:
                 emotionController.SetEmotion("happy");  
@@ -75,8 +79,33 @@ public class SceneController : MonoBehaviour
 
     void Update()
     {
- 
+        // Only perform checks if wake-up is complete
+        if (!wakeUpComplete) return;
+
+        // Check distance at regular intervals
+        if (Time.time - lastDistanceCheckTime >= distanceCheckInterval)
+        {
+            lastDistanceCheckTime = Time.time;
+            float distance = GetDistanceToPlayer();
+            
+            // Show sadness if too far away
+            if (distance > maxDistance && !isShowingSadness && !isWakingUp)
+            {
+                emotionController.SetEmotion("sad");
+                emotionController.ExpressEmotion();
+                isShowingSadness = true;
+            }
+            // Reset when back in range
+            else if (distance <= maxDistance && isShowingSadness)
+            {
+                emotionController.SetEmotion("neutral");
+                emotionController.ExpressEmotion();
+                isShowingSadness = false;
+            }
+        }
+
     }
+
 
     // Audio control methods
     public void PlaySound(string emotion)

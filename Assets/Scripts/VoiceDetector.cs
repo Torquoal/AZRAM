@@ -39,7 +39,7 @@ public class VoiceDetector : MonoBehaviour
         },
         new WordGroup {
             groupName = "Greeting",
-            variations = new List<string> { "hello", "hi", "hey", "greetings" }
+            variations = new List<string> { "hello", "hi", "hey", "greetings", "how are you doing", "good morning", "good afternoon", "good evening" }
         },
         new WordGroup {
             groupName = "Farewell",
@@ -48,6 +48,10 @@ public class VoiceDetector : MonoBehaviour
         new WordGroup {
             groupName = "Praise",
             variations = new List<string> { "good boy", "good kitty", "good robot", "nice", "well done" }
+        },
+        new WordGroup {
+            groupName = "Food",
+            variations = new List<string> { "food", "hungry", "eat", "eating", "ate", "ate it", "ate it all", "ate it all the time" }
         }
     };
 
@@ -230,7 +234,8 @@ public class VoiceDetector : MonoBehaviour
             case "Name":
                 if (showDebugLogs)
                     Debug.Log("Detected: Qoobo's name was called!");
-                    sceneController.ShowThought("Exclamation");
+                sceneController.ShowThought("Exclamation");
+                sceneController.PlaySound("beep");
                 break;
 
             case "Happy":
@@ -253,6 +258,8 @@ public class VoiceDetector : MonoBehaviour
             case "Greeting":
                 if (showDebugLogs)
                     Debug.Log("Detected: A greeting!");
+                sceneController.ShowThought("Exclamation");
+                sceneController.PlaySound("beep");
                 break;
 
             case "Farewell":
@@ -263,6 +270,13 @@ public class VoiceDetector : MonoBehaviour
             case "Praise":
                 if (showDebugLogs)
                     Debug.Log("Detected: Words of praise!");
+                sceneController.ShowThought("Exclamation");
+                sceneController.PlaySound("beep");
+                break;
+            case "Food":
+                if (showDebugLogs)
+                    Debug.Log("Detected: Food word!");
+                sceneController.ShowThought("Hungry");
                 break;
         }
     }

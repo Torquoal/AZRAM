@@ -108,7 +108,7 @@ public class FaceAnimationController : MonoBehaviour
             
             // Ensure alpha channel is respected
             animatedMaterial.SetOverrideTag("RenderType", "Transparent");
-            animatedMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Off);
+            animatedMaterial.SetInt("_Cull", (int)UnityEngine.Rendering.CullMode.Back); // Enable back-face culling
             
             // Set color to white with full alpha to not tint the texture
             animatedMaterial.color = new Color(1, 1, 1, 1);

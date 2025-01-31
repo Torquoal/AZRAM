@@ -9470,6 +9470,9 @@ MonoBehaviour:
   emotionController: {fileID: 799751471}
   tailAnimations: {fileID: 1112418009}
   strokeDetector: {fileID: 318212778}
+  maxDistance: 2.5
+  distanceCheckInterval: 0.5
+  wakeUpComplete: 0
 --- !u!114 &799751468
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9550,7 +9553,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   sceneController: {fileID: 799751467}
   emotionText: {fileID: 996060955}
-  showDebugText: 0
+  showDebugText: 1
   emotionFormat: 'Emotion: {0}'
   manualEmotion: 0
   initialEmotionDelay: 1
@@ -9574,6 +9577,7 @@ MonoBehaviour:
   showDebugRay: 0
   debugRayLength: 2
   debugRayColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  sceneController: {fileID: 799751467}
 --- !u!114 &799751473
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -12075,37 +12079,6 @@ MonoBehaviour:
   _fadeOut: 0
   _gradientLength: 0.85
   _glowType: 28
---- !u!1 &945256371
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 945256372}
-  m_Layer: 0
-  m_Name: cold
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &945256372
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 945256371}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &946739845
 GameObject:
   m_ObjectHideFlags: 0
@@ -12781,7 +12754,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 1.44, y: 4.7}
+  m_AnchoredPosition: {x: 1.44, y: 4.7000046}
   m_SizeDelta: {x: 224.39, y: 19.45}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &996060955
@@ -15516,9 +15489,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   neutralLoopPath: NeutralLoop
   happyLoopPath: HappyLoop
+  angryLoopPath: AngryLoop
   frameRate: 24
   loopNeutralAnimation: 1
   loopHappyAnimation: 1
+  loopAngryAnimation: 1
 --- !u!1 &1181708167
 GameObject:
   m_ObjectHideFlags: 0
@@ -18335,9 +18310,9 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 996060954}
   - {fileID: 1485287114}
   - {fileID: 1498579919}
-  - {fileID: 996060954}
   m_Father: {fileID: 1181708171}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -26963,4 +26938,3 @@ SceneRoots:
   - {fileID: 799712505}
   - {fileID: 1112417997}
   - {fileID: 1181708171}
-  - {fileID: 945256372}

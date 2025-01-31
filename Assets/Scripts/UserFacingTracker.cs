@@ -13,6 +13,12 @@ public class UserFacingTracker : MonoBehaviour
     [SerializeField] private float debugRayLength = 2f;
     [SerializeField] private Color debugRayColor = Color.yellow;
 
+    [SerializeField] private SceneController sceneController;
+
+    bool hasShown = false;
+    float angleToQoobo;
+
+
     private void Start()
     {
         if (arCamera == null)
@@ -32,10 +38,19 @@ public class UserFacingTracker : MonoBehaviour
         Vector3 directionToQoobo = (qooboMesh.transform.position - arCamera.transform.position).normalized;
 
         // Calculate the angle between the two directions
-        float angle = Vector3.Angle(headDirection, directionToQoobo);
+        angleToQoobo = Vector3.Angle(headDirection, directionToQoobo);
+
+        if ((angleToQoobo < 15f) && (sceneController.wakeUpComplete) && (!hasShown))
+        {
+            sceneController.ShowThought("looking");
+            sceneController.PlaySound("peep");
+            hasShown = true;
+        }
+
 
         // Update the debug text
-        angleDebugText.text = $"Facing Angle: {angle:F1}°";
+        angleDebugText.text = $"Facing Angle: {angleToQoobo:F1}°";
+
 
         // Draw debug ray if enabled
         if (showDebugRay)
