@@ -9696,6 +9696,7 @@ GameObject:
   - component: {fileID: 799751471}
   - component: {fileID: 799751472}
   - component: {fileID: 799751473}
+  - component: {fileID: 799751474}
   m_Layer: 0
   m_Name: ScriptHost
   m_TagString: Untagged
@@ -9866,6 +9867,32 @@ MonoBehaviour:
   - {fileID: 8300000, guid: d315387e6e68d9645953cca6fe917d82, type: 3}
   - {fileID: 8300000, guid: 5631fb845ba95634793d2c8ccba4183c, type: 3}
   - {fileID: 8300000, guid: 92dc81b416347d5468820e8e35cb2c41, type: 3}
+--- !u!114 &799751474
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 799751465}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b2c9eca53792884b81c596ac2c0d1e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  touchGauge: 31
+  restGauge: 50
+  socialGauge: 50
+  hungerGauge: 50
+  touchFulfilled: 70
+  touchNeeded: 30
+  restFulfilled: 70
+  restNeeded: 30
+  socialFulfilled: 70
+  socialNeeded: 30
+  hungerFulfilled: 70
+  hungerNeeded: 30
+  useAcceleratedTesting: 1
+  testingMultiplier: 180
 --- !u!1 &799816403
 GameObject:
   m_ObjectHideFlags: 0
@@ -13862,7 +13889,7 @@ MonoBehaviour:
   useRecommendedMSAALevel: 1
   _monoscopic: 0
   _sharpenType: 0
-  enableDynamicResolution: 0
+  enableDynamicResolution: 1
   minDynamicResolutionScale: 1
   maxDynamicResolutionScale: 1
   quest2MinDynamicResolutionScale: 0.7
@@ -23338,7 +23365,6 @@ GameObject:
   - component: {fileID: 1794637809}
   - component: {fileID: 1794637808}
   - component: {fileID: 1794637807}
-  - component: {fileID: 1794637806}
   - component: {fileID: 1794637805}
   - component: {fileID: 1794637804}
   - component: {fileID: 1794637803}
@@ -23525,21 +23551,6 @@ MonoBehaviour:
   _addNewPointsToFront: 0
   _forwardElement: {fileID: 0}
   _canvas: {fileID: 1794637809}
---- !u!114 &1794637806
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1794637802}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  m_FirstSelected: {fileID: 0}
-  m_sendNavigationEvents: 1
-  m_DragThreshold: 10
 --- !u!114 &1794637807
 MonoBehaviour:
   m_ObjectHideFlags: 0
