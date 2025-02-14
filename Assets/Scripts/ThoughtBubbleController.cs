@@ -45,7 +45,7 @@ public class ThoughtBubbleController : MonoBehaviour
                 }
                 else
                 {
-                    Debug.Log($"Sprite {i}: {thoughtSprites[i].name}");
+                    //Debug.Log($"Sprite {i}: {thoughtSprites[i].name}");
                 }
             }
         }

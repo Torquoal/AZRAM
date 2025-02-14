@@ -3,6 +3,20 @@ using System.Collections.Generic;
 
 public class EmotionModel : MonoBehaviour
 {
+    
+    [SerializeField] [Range(-10, 10)] private float longTermValence = 10f;
+    [SerializeField] [Range(-10, 10)] private float longTermArousal = 0f;
+
+    [SerializeField] [Range(-10, 10)] private float moodValence;
+    [SerializeField] [Range(-10, 10)] private float moodArousal;
+
+    private float moodValenceOnWakeup;
+    private float arousalArousalOnWakup;
+
+    // Set initial current emotional state
+    [SerializeField] private string currentTemperament;
+    [SerializeField] private string currentMood;
+    
     // Struct to hold the emotional response values
     private struct EmotionalResponseValues
     {
@@ -18,33 +32,10 @@ public class EmotionModel : MonoBehaviour
         }
     }
 
-    // Enum for emotional states
-    private enum EmotionalState
-    {
-        Happy,
-        Sad,
-        Angry,
-        Neutral
-    }
+    // The emotional response lookup table using strings
+    private Dictionary<string, Dictionary<string, EmotionalResponseValues>> responseTable;
 
-    // Enum for threshold events
-    private enum ThresholdEvent
-    {
-        TouchNeeded,
-        TouchFulfilled,
-        RestNeeded,
-        RestFulfilled,
-        SocialNeeded,
-        SocialFulfilled,
-        HungerNeeded,
-        HungerFulfilled
-    }
-
-    // The emotional response lookup table
-    private Dictionary<ThresholdEvent, Dictionary<EmotionalState, EmotionalResponseValues>> responseTable;
-
-    // Current emotional state
-    private EmotionalState currentEmotionalState = EmotionalState.Happy;
+    
 
     // Dictionary to store the emotional response the robot will eventually display
     private Dictionary<string, string> emotionalResponse = new Dictionary<string, string>
@@ -57,20 +48,20 @@ public class EmotionModel : MonoBehaviour
     };
 
     [Header("Need Values")]
-    [SerializeField] [Range(0, 100)] private int touchGauge = 50;
-    [SerializeField] [Range(0, 100)] private int restGauge = 50;
-    [SerializeField] [Range(0, 100)] private int socialGauge = 50;
-    [SerializeField] [Range(0, 100)] private int hungerGauge = 50;
+    [SerializeField] [Range(0, 100)] private float touchGauge = 50f;
+    [SerializeField] [Range(0, 100)] private float restGauge = 50f;
+    [SerializeField] [Range(0, 100)] private float socialGauge = 50f;
+    [SerializeField] [Range(0, 100)] private float hungerGauge = 50f;
 
     [Header("Need Thresholds")]
-    [SerializeField] [Range(0, 100)] private int touchFulfilled = 70;
-    [SerializeField] [Range(0, 100)] private int touchNeeded = 30;
-    [SerializeField] [Range(0, 100)] private int restFulfilled = 70;
-    [SerializeField] [Range(0, 100)] private int restNeeded = 30;
-    [SerializeField] [Range(0, 100)] private int socialFulfilled = 70;
-    [SerializeField] [Range(0, 100)] private int socialNeeded = 30;
-    [SerializeField] [Range(0, 100)] private int hungerFulfilled = 70;
-    [SerializeField] [Range(0, 100)] private int hungerNeeded = 30;
+    [SerializeField] [Range(0, 100)] private float touchFulfilled = 70f;
+    [SerializeField] [Range(0, 100)] private float touchNeeded = 30f;
+    [SerializeField] [Range(0, 100)] private float restFulfilled = 70f;
+    [SerializeField] [Range(0, 100)] private float restNeeded = 30f;
+    [SerializeField] [Range(0, 100)] private float socialFulfilled = 70;
+    [SerializeField] [Range(0, 100)] private float socialNeeded = 30f;
+    [SerializeField] [Range(0, 100)] private float hungerFulfilled = 70f;
+    [SerializeField] [Range(0, 100)] private float hungerNeeded = 30f;
 
     [Header("Decay Settings")]
     [SerializeField] private bool useAcceleratedTesting = false;
@@ -91,42 +82,58 @@ public class EmotionModel : MonoBehaviour
     private readonly float socialDecayRate = 100f / (6f * 60f * 60f);   // 100 points / 6 hours
     private readonly float hungerDecayRate = 100f / (6f * 60f * 60f);   // 100 points / 6 hours
 
-    private void Awake()
+    // Constants for PlayerPrefs keys
+    private const string LONG_TERM_VALENCE_KEY = "LongTermValence";
+    private const string LONG_TERM_AROUSAL_KEY = "LongTermArousal";
+
+    //test Functions
+    [ContextMenu("Test Emotional Model - StrokeFrontToBack")]
+    private void TestStrokeFrontToBack()
     {
-        InitializeResponseTable();
+        string triggeredEvent = "StrokeFrontToBack";
+        string displayString = CalculateEmotionalResponse(triggeredEvent);
+        Debug.Log("Test Emotional Model - StrokeFrontToBack: " + displayString);
     }
 
-    private void InitializeResponseTable()
+    [ContextMenu("Test Emotional Model - Touch Fulfilled")]
+    private void TestTouchFulfilled()
     {
-        responseTable = new Dictionary<ThresholdEvent, Dictionary<EmotionalState, EmotionalResponseValues>>();
+        string triggeredEvent = "TouchFulfilled";
+        string displayString = CalculateEmotionalResponse(triggeredEvent);
+        Debug.Log("Test Emotional Model - Touch Fulfilled: " + displayString);
+    }
 
-        // Initialize the table structure
-        foreach (ThresholdEvent threshold in System.Enum.GetValues(typeof(ThresholdEvent)))
+
+
+    private void Awake()
+    {
+        // Load long term values from persistent storage
+        if (PlayerPrefs.HasKey(LONG_TERM_VALENCE_KEY))
         {
-            responseTable[threshold] = new Dictionary<EmotionalState, EmotionalResponseValues>();
-            
-            foreach (EmotionalState state in System.Enum.GetValues(typeof(EmotionalState)))
-            {
-                // Example values - you should replace these with your actual desired values
-                responseTable[threshold][state] = new EmotionalResponseValues
-                {
-                    Valence = 0.5f,
-                    Arousal = 0.5f,
-                    Touch = 0.5f,
-                    Rest = 0.5f,
-                    Social = 0.5f
-                };
-            }
+            longTermValence = PlayerPrefs.GetFloat(LONG_TERM_VALENCE_KEY);
+        }
+        if (PlayerPrefs.HasKey(LONG_TERM_AROUSAL_KEY))
+        {
+            longTermArousal = PlayerPrefs.GetFloat(LONG_TERM_AROUSAL_KEY);
         }
 
-        // Set specific values for different combinations
-        // Example for TouchNeeded when Happy:
-        responseTable[ThresholdEvent.TouchNeeded][EmotionalState.Happy] = new EmotionalResponseValues
-        {
-            Valence = -5f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f
-        };
+        InitializeResponseTable();
+        currentTemperament = classifyEmotionalState(longTermValence, longTermArousal);
+        Debug.Log($"Current emotional state on wakeup: {currentTemperament}");
 
-        // Add more specific values here...
+        // calculate this session's mood 
+        moodValence = longTermValence + Random.Range(-5f, 5f);
+        moodArousal = longTermArousal + Random.Range(-5f, 5f);
+
+        currentMood = classifyEmotionalState(moodValence, moodArousal);
+        Debug.Log($"Current mood on wakeup: {currentMood}");
+
+        Debug.Log($"Emotion Model: Mood on wakeup: V: {moodValence}, A: {moodArousal}");
+
+        // save the mood values from the start of the session to calculate delta later
+        moodValenceOnWakeup = moodValence;
+        arousalArousalOnWakup = moodArousal;
+
     }
 
     private void Start()
@@ -145,10 +152,10 @@ public class EmotionModel : MonoBehaviour
         float deltaTime = Time.deltaTime * timeMultiplier;
 
         // Store previous values to detect threshold crossings
-        int prevTouch = touchGauge;
-        int prevRest = restGauge;
-        int prevSocial = socialGauge;
-        int prevHunger = hungerGauge;
+        float prevTouch = touchGauge;
+        float prevRest = restGauge;
+        float prevSocial = socialGauge;
+        float prevHunger = hungerGauge;
 
         // Accumulate decay values
         touchDecayAccumulator += touchDecayRate * deltaTime;
@@ -159,30 +166,30 @@ public class EmotionModel : MonoBehaviour
         // Only update gauges when accumulated decay is >= 1
         if (touchDecayAccumulator >= 1f)
         {
-            int decayAmount = Mathf.FloorToInt(touchDecayAccumulator);
-            touchGauge = Mathf.Max(0, touchGauge - decayAmount);
-            touchDecayAccumulator -= decayAmount;
+            float decayAmount = touchDecayAccumulator;
+            touchGauge = Mathf.Max(0f, touchGauge - decayAmount);
+            touchDecayAccumulator = 0f;
         }
 
         if (restDecayAccumulator >= 1f)
         {
-            int decayAmount = Mathf.FloorToInt(restDecayAccumulator);
-            restGauge = Mathf.Max(0, restGauge - decayAmount);
-            restDecayAccumulator -= decayAmount;
+            float decayAmount = restDecayAccumulator;
+            restGauge = Mathf.Max(0f, restGauge - decayAmount);
+            restDecayAccumulator = 0f;
         }
 
         if (socialDecayAccumulator >= 1f)
         {
-            int decayAmount = Mathf.FloorToInt(socialDecayAccumulator);
-            socialGauge = Mathf.Max(0, socialGauge - decayAmount);
-            socialDecayAccumulator -= decayAmount;
+            float decayAmount = socialDecayAccumulator;
+            socialGauge = Mathf.Max(0f, socialGauge - decayAmount);
+            socialDecayAccumulator = 0f;
         }
 
         if (hungerDecayAccumulator >= 1f)
         {
-            int decayAmount = Mathf.FloorToInt(hungerDecayAccumulator);
-            hungerGauge = Mathf.Max(0, hungerGauge - decayAmount);
-            hungerDecayAccumulator -= decayAmount;
+            float decayAmount = hungerDecayAccumulator;
+            hungerGauge = Mathf.Max(0f, hungerGauge - decayAmount);
+            hungerDecayAccumulator = 0f;
         }
 
         // Check for threshold crossings
@@ -216,59 +223,280 @@ public class EmotionModel : MonoBehaviour
         Debug.Log(gaugeStatus);
     }
 
-    private void CheckNeedThreshold(string needName, int currentValue, int previousValue, int neededThreshold, int fulfilledThreshold)
+    private void CheckNeedThreshold(string needName, float currentValue, float previousValue, float neededThreshold, float fulfilledThreshold)
     {
-        ThresholdEvent? triggeredEvent = null;
+        string triggeredEvent = null;
 
         // Check if crossed below Needed threshold
         if (previousValue >= neededThreshold && currentValue < neededThreshold)
         {
             Debug.Log($"{needName} need is now below threshold! Value: {currentValue} < {neededThreshold}");
-            
-            // Determine which threshold event was triggered
-            switch (needName)
-            {
-                case "Touch": triggeredEvent = ThresholdEvent.TouchNeeded; break;
-                case "Rest": triggeredEvent = ThresholdEvent.RestNeeded; break;
-                case "Social": triggeredEvent = ThresholdEvent.SocialNeeded; break;
-                case "Hunger": triggeredEvent = ThresholdEvent.HungerNeeded; break;
-            }
+            triggeredEvent = $"{needName}Needed";
         }
         // Check if crossed above Fulfilled threshold
         else if (previousValue <= fulfilledThreshold && currentValue > fulfilledThreshold)
         {
             Debug.Log($"{needName} need is now fulfilled! Value: {currentValue} > {fulfilledThreshold}");
-            
-            // Determine which threshold event was triggered
-            switch (needName)
-            {
-                case "Touch": triggeredEvent = ThresholdEvent.TouchFulfilled; break;
-                case "Rest": triggeredEvent = ThresholdEvent.RestFulfilled; break;
-                case "Social": triggeredEvent = ThresholdEvent.SocialFulfilled; break;
-                case "Hunger": triggeredEvent = ThresholdEvent.HungerFulfilled; break;
-            }
+            triggeredEvent = $"{needName}Fulfilled";
         }
 
         // If a threshold was crossed, look up the response in the table
-        if (triggeredEvent.HasValue)
+        if (triggeredEvent != null && responseTable.ContainsKey(triggeredEvent))
         {
-            EmotionalResponseValues response = responseTable[triggeredEvent.Value][currentEmotionalState];
-            Debug.Log($"Emotional Response for {needName} ({triggeredEvent}) in {currentEmotionalState} state:\n{response}");
+            string displayString = CalculateEmotionalResponse(triggeredEvent);
+            Debug.Log($"Emotional Response for {needName} ({triggeredEvent}) is {displayString}");
+            // TODO: Call Whatever SceneController Function Will Use displayString to actuate displays
         }
     }
 
     // Method to calculate the emotional response the robot will eventually display
-    public Dictionary<string, string> CalculateEmotionalResponse()
+    public string CalculateEmotionalResponse(string triggeredEvent)
     {
-        emotionalResponse["face"] = "happy";
-        emotionalResponse["light"] = null;
-        emotionalResponse["sound"] = "happy";
-        emotionalResponse["thought"] = "heart";
-        emotionalResponse["tail"] = "happy";
+        //emotionalResponse["face"] = "happy";
+        //emotionalResponse["light"] = null;
+        //emotionalResponse["sound"] = "happy";
+        //emotionalResponse["thought"] = "heart";
+        //emotionalResponse["tail"] = "happy";
 
-        string debugOutput = "EmotionModel: Emotional Response:\n";
-        foreach (var response in emotionalResponse){debugOutput += $"{response.Key}: {response.Value}\n";}
-        Debug.Log(debugOutput);
-        return emotionalResponse;
+        currentMood = classifyEmotionalState(moodValence, moodArousal);
+        EmotionalResponseValues response = responseTable[triggeredEvent][currentMood];
+        Debug.Log("Calculated emotional response to " + triggeredEvent + " in " + currentMood + " is:\n" + response);
+
+        string displayString = emotionalDisplayTable(response);
+
+        return displayString;
     }
+
+
+    /*
+   Tables!
+
+   1. classifyEmotionalState() returns the current emotional state as a semantic string based on
+   long term valence and arousal values.
+
+   2. InitializeResponseTable() this a table that returns a specific set of emotional response values
+   based on an A) a user action or robot need gauge threshold (e.g., TouchNeeded or StrokeFrontToBack)
+   and B) the current emotional state as returned by classifyEmotionalState(). These responses have five
+   values. Valence and Arousal are used to identify what short term emotional response will display using
+   the displayTable. Touch, Rest and Social are values to be added to the robot's need gauges, allowing
+   certain user actions to impact the robot's needs.
+
+   3. displayTable() this is a table that uses the valence and arousal values from the responseTable
+   to return a specific string that SceneController will use to select what emotional displays are
+   shown. The valence and arousal values are fuzzed first enough that emotional responses are not 
+   perfectly consistent and the robot can sometimes show a display one column or row beyond the norrmal
+   response (fuzz of 3?). Additionally, a small percentage (10%?) of these values is added to the
+   robot's long term valence and arousal, allowing for slow mood change and long-term evolution.
+    */
+
+    private string classifyEmotionalState(float valence, float arousal)
+    {
+        string classifiedEmotion = "unclassified";
+        if (valence > 3){
+            if (arousal > 3){
+                classifiedEmotion = "Excited";
+            } else if (arousal < 3 && arousal > -3){
+                classifiedEmotion = "Happy";
+            } else if (arousal < -3){
+                classifiedEmotion = "Relaxed";
+            }
+        } else if (valence < 3 && valence > -3){
+            if (arousal > 3){
+                classifiedEmotion = "Energetic";
+            } else if (arousal < 3 && arousal > -3){
+                classifiedEmotion = "Neutral";
+            } else if (arousal < -3){
+                classifiedEmotion = "Lethargic";
+            }
+        } else if (valence < -3){
+            if (arousal > 3){
+                classifiedEmotion = "Aggressive";
+            } else if (arousal < 3 && arousal > -3){
+                classifiedEmotion = "Sad";
+            } else if (arousal < -3){
+                classifiedEmotion = "Gloomy";
+            }     
+        } else {
+            Debug.LogError("Long term valence is out of range");
+        }
+        return classifiedEmotion;
+    }
+
+    private void InitializeResponseTable()
+    {
+        responseTable = new Dictionary<string, Dictionary<string, EmotionalResponseValues>>();
+
+        // Define initial events and states
+        string[] events = new string[] { 
+            "TouchNeeded", "TouchFulfilled", 
+            "RestNeeded", "RestFulfilled",
+            "SocialNeeded", "SocialFulfilled",
+            "HungerNeeded", "HungerFulfilled",
+            "StrokeFrontToBack", "StrokeBackToFront"
+        };
+
+        string[] states = new string[] {"Excited", "Happy", "Relaxed", 
+                                        "Energetic", "Neutral", "Lethargic", 
+                                        "Sad", "Gloomy", "Aggressive" };
+
+        // Initialize the table structure
+        foreach (string eventType in events)
+        {
+            responseTable[eventType] = new Dictionary<string, EmotionalResponseValues>();
+            
+            foreach (string state in states)
+            {
+                // Default values
+                responseTable[eventType][state] = new EmotionalResponseValues
+                {Valence = 0f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f};
+            }
+        }
+
+        // Set specific values for different combinations
+        // Need Gauge Lower Need Thresholds
+        responseTable["TouchNeeded"]["Happy"] = new EmotionalResponseValues
+        {Valence = -5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = -5f};
+        responseTable["RestNeeded"]["Happy"] = new EmotionalResponseValues
+        {Valence = 0f, Arousal = -10f, Touch = 0f, Rest = 0f, Social = 0f};
+        responseTable["SocialNeeded"]["Happy"] = new EmotionalResponseValues
+        {Valence = -5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 0f};
+        responseTable["HungerNeeded"]["Happy"] = new EmotionalResponseValues
+        {Valence = 0f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 0f};
+        // Need Gauge Upper FulfilledThresholds
+        responseTable["TouchFulfilled"]["Happy"] = new EmotionalResponseValues
+        {Valence = 10f, Arousal = 5f, Touch = 10f, Rest = 0f, Social = 5f};
+        responseTable["RestFulfilled"]["Happy"] = new EmotionalResponseValues
+        {Valence = 5f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f};
+        responseTable["SocialFulfilled"]["Happy"] = new EmotionalResponseValues
+        {Valence = 5f, Arousal = -5f, Touch = 0f, Rest = 0f, Social = 0f};
+        responseTable["HungerFulfilled"]["Happy"] = new EmotionalResponseValues
+        {Valence = 5f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f};
+        // Stroke Events
+        responseTable["StrokeFrontToBack"]["Happy"] = new EmotionalResponseValues
+        {Valence = 10f, Arousal = 5f, Touch = 10f, Rest = 0f, Social = 5f};
+        responseTable["StrokeBackToFront"]["Happy"] = new EmotionalResponseValues
+        {Valence = 5f, Arousal = 5f, Touch = 10f, Rest = -5f, Social = 5f};
+        // Add more specific values here...
+    }
+
+    private string emotionalDisplayTable(EmotionalResponseValues response)
+    {
+        string displayString = "Neutral";
+        
+        //addition to Need Gauges
+        touchGauge += response.Touch;
+        restGauge += response.Rest;
+        socialGauge += response.Social;
+
+        Debug.Log("Added to Gauges: Touch: " + response.Touch + 
+                                   " Rest: " + response.Rest + 
+                                 " Social: " + response.Social);
+        
+        //fuzz valence and arousal values
+        float fuzzedValence = response.Valence + Random.Range(-3f, 3f);
+        float fuzzedArousal = response.Arousal + Random.Range(-3f, 3f);
+
+
+
+        //add a small percentage (5%?) of these values to the robot's long term valence and arousal.
+        moodValence += fuzzedValence * 0.01f;
+        moodArousal += fuzzedArousal * 0.01f;
+
+        Debug.Log("Emotion Model: response.Valence: " + response.Valence + 
+                " fuzzed to " + fuzzedValence + 
+                "and 5%" + fuzzedValence*0.01f + "added to mood valence");
+        Debug.Log("Emotion Model: response.Arousal: " + response.Arousal + 
+                  " fuzzed to " + fuzzedArousal + 
+                  "and 5%" + fuzzedArousal*0.01f + "added to mood arousal");
+
+        if (fuzzedArousal > 6){
+            if (fuzzedValence > 6){
+                displayString = "Excited";
+            } else if (fuzzedValence < 6 && fuzzedValence > 3){
+                displayString = "Excited";
+            } else if (fuzzedValence < 3 && fuzzedValence > 3){
+                displayString = "Shocked";
+            } else if (fuzzedValence < -3 && fuzzedValence > -6){
+                displayString = "Annoyed";
+            } else if (fuzzedValence < -6){
+                displayString = "Angry";
+            }
+        } else if (fuzzedArousal < 6 && fuzzedArousal > 3){
+            if (fuzzedValence > 6){
+                displayString = "Happy";
+            } else if (fuzzedValence < 6 && fuzzedValence > 3){
+                displayString = "Happy";
+            } else if (fuzzedValence < 3 && fuzzedValence > 3){
+                displayString = "Alert";
+            } else if (fuzzedValence < -3 && fuzzedValence > -6){
+                displayString = "Annoyed";
+            } else if (fuzzedValence < -6){
+                displayString = "Angry";
+            }
+        } else if (fuzzedArousal < 3 && fuzzedArousal > -3){
+            if (fuzzedValence > 6){
+                displayString = "Happy";
+            } else if (fuzzedValence < 6 && fuzzedValence > 3){
+                displayString = "Happy";
+            } else if (fuzzedValence < 3 && fuzzedValence > 3){
+                displayString = "Neutral";
+            } else if (fuzzedValence < -3 && fuzzedValence > -6){
+                displayString = "Sad";
+            } else if (fuzzedValence < -6){
+                displayString = "Crying";
+            }
+        } else if (fuzzedArousal < -3 && fuzzedArousal > -6){
+            if (fuzzedValence > 6){
+                displayString = "Relaxed";
+            } else if (fuzzedValence < 6 && fuzzedValence > 3){
+                displayString = "Relaxed";
+            } else if (fuzzedValence < 3 && fuzzedValence > 3){
+                displayString = "Tired";
+            } else if (fuzzedValence < -3 && fuzzedValence > -6){
+                displayString = "Sad";
+            } else if (fuzzedValence < -6){
+                displayString = "Crying";
+            }
+        } else if (fuzzedArousal < -6){
+            displayString = "Sleepy";
+        } else {
+            Debug.LogError("Fuzzed Arousal is out of range");
+        }
+        Debug.Log("Emotion Model: selected display string from fuzzed values: " + displayString);
+        return displayString;
+    }
+
+    private void OnApplicationQuit()
+    {
+        // 1. Calculate mood changes from this session
+        float valenceDelta = moodValence - moodValenceOnWakeup;
+        float arousalDelta = moodArousal - arousalArousalOnWakup;
+
+        Debug.Log($"Session mood changes - Valence: {valenceDelta:F2}, Arousal: {arousalDelta:F2}");
+
+        // 2. Apply session changes to long term values
+        longTermValence = Mathf.Clamp(longTermValence + valenceDelta, -10f, 10f);
+        longTermArousal = Mathf.Clamp(longTermArousal + arousalDelta, -10f, 10f);
+
+        Debug.Log($"Updated long term values - Valence: {longTermValence:F2}, Arousal: {longTermArousal:F2}");
+
+        // 3. Save to persistent storage
+        PlayerPrefs.SetFloat(LONG_TERM_VALENCE_KEY, longTermValence);
+        PlayerPrefs.SetFloat(LONG_TERM_AROUSAL_KEY, longTermArousal);
+        PlayerPrefs.Save();
+
+        Debug.Log("Saved emotional values to persistent storage");
+    }
+
+    // Method to reset long-term values if needed (for testing)
+    [ContextMenu("Reset Long Term Values")]
+    private void ResetLongTermValues()
+    {
+        PlayerPrefs.DeleteKey(LONG_TERM_VALENCE_KEY);
+        PlayerPrefs.DeleteKey(LONG_TERM_AROUSAL_KEY);
+        longTermValence = 10f;  // Default starting value
+        longTermArousal = 0f;   // Default starting value
+        Debug.Log("Reset long term emotional values to defaults");
+    }
+
 } 

@@ -13,6 +13,7 @@ public class SceneController : MonoBehaviour
     [SerializeField] private EmotionController emotionController;
     [SerializeField] private TailAnimations tailAnimations;
     [SerializeField] private StrokeDetector strokeDetector;
+    [SerializeField] private EmotionModel emotionModel;
 
     [Header("Distance Settings")]
     [SerializeField] private float maxDistance = 2.0f; // Maximum distance in meters before showing sadness
@@ -22,6 +23,7 @@ public class SceneController : MonoBehaviour
 
     private bool isWakingUp = false;
     public bool wakeUpComplete = false;
+
 
     void Start()
     {
@@ -52,6 +54,7 @@ public class SceneController : MonoBehaviour
         switch (direction)
         {
             case StrokeDetector.StrokeDirection.FrontToBack:
+                emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
                 emotionController.SetEmotion("happy");
                 emotionController.ExpressEmotion();
                 break;
