@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.IO;
+using System;
 
 public class EmotionModel : MonoBehaviour
 {
@@ -122,8 +124,8 @@ public class EmotionModel : MonoBehaviour
         Debug.Log($"Current emotional state on wakeup: {currentTemperament}");
 
         // calculate this session's mood 
-        moodValence = longTermValence + Random.Range(-5f, 5f);
-        moodArousal = longTermArousal + Random.Range(-5f, 5f);
+        moodValence = longTermValence + UnityEngine.Random.Range(-5f, 5f);
+        moodArousal = longTermArousal + UnityEngine.Random.Range(-5f, 5f);
 
         currentMood = classifyEmotionalState(moodValence, moodArousal);
         Debug.Log($"Current mood on wakeup: {currentMood}");
@@ -243,6 +245,10 @@ public class EmotionModel : MonoBehaviour
         // If a threshold was crossed, look up the response in the table
         if (triggeredEvent != null && responseTable.ContainsKey(triggeredEvent))
         {
+            //TODO need some logic here that checks for 'special events' e.g., if Rest <10 a special
+            //sleeping display is triggered and the normal table is bypassed. SceneController will 
+            //do something similar for user-initiated special events, such as saying Qoobo's name.
+            //Only if the triggeredEvent is not a special event will the normal table be used.
             string displayString = CalculateEmotionalResponse(triggeredEvent);
             Debug.Log($"Emotional Response for {needName} ({triggeredEvent}) is {displayString}");
             // TODO: Call Whatever SceneController Function Will Use displayString to actuate displays
@@ -252,13 +258,24 @@ public class EmotionModel : MonoBehaviour
     // Method to calculate the emotional response the robot will eventually display
     public string CalculateEmotionalResponse(string triggeredEvent)
     {
-        //emotionalResponse["face"] = "happy";
-        //emotionalResponse["light"] = null;
-        //emotionalResponse["sound"] = "happy";
-        //emotionalResponse["thought"] = "heart";
-        //emotionalResponse["tail"] = "happy";
-
         currentMood = classifyEmotionalState(moodValence, moodArousal);
+        
+        // Debug logging
+        Debug.Log($"Calculating response for event '{triggeredEvent}' in mood '{currentMood}'");
+        Debug.Log($"Response table contains {responseTable.Count} events");
+        
+        if (!responseTable.ContainsKey(triggeredEvent))
+        {
+            Debug.LogError($"No responses found for event: {triggeredEvent}");
+            return "Neutral";
+        }
+        
+        if (!responseTable[triggeredEvent].ContainsKey(currentMood))
+        {
+            Debug.LogError($"No response found for mood: {currentMood} in event: {triggeredEvent}");
+            return "Neutral";
+        }
+
         EmotionalResponseValues response = responseTable[triggeredEvent][currentMood];
         Debug.Log("Calculated emotional response to " + triggeredEvent + " in " + currentMood + " is:\n" + response);
 
@@ -322,61 +339,93 @@ public class EmotionModel : MonoBehaviour
         return classifiedEmotion;
     }
 
+
     private void InitializeResponseTable()
     {
         responseTable = new Dictionary<string, Dictionary<string, EmotionalResponseValues>>();
+        
+        // Path to the CSV file in the StreamingAssets folder
+        string csvPath = Path.Combine(Application.streamingAssetsPath, "EmotionalResponses.csv");
 
-        // Define initial events and states
-        string[] events = new string[] { 
-            "TouchNeeded", "TouchFulfilled", 
-            "RestNeeded", "RestFulfilled",
-            "SocialNeeded", "SocialFulfilled",
-            "HungerNeeded", "HungerFulfilled",
-            "StrokeFrontToBack", "StrokeBackToFront"
-        };
+        try
+        {
+            // Create StreamingAssets directory if it doesn't exist
+            Directory.CreateDirectory(Application.streamingAssetsPath);
+            
+            // Read all lines from the CSV file
+            string[] lines = File.ReadAllLines(csvPath);
+            
+            // Skip the header row
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] values = lines[i].Split(',');
+                
+                // Parse the CSV values
+                string eventType = values[0];
+                string emotionalState = values[1];
+                float valence = float.Parse(values[2]);
+                float arousal = float.Parse(values[3]);
+                float touch = float.Parse(values[4]);
+                float rest = float.Parse(values[5]);
+                float social = float.Parse(values[6]);
+                
+                // Create response value
+                EmotionalResponseValues response = new EmotionalResponseValues
+                {
+                    Valence = valence,
+                    Arousal = arousal,
+                    Touch = touch,
+                    Rest = rest,
+                    Social = social
+                };
 
-        string[] states = new string[] {"Excited", "Happy", "Relaxed", 
-                                        "Energetic", "Neutral", "Lethargic", 
-                                        "Sad", "Gloomy", "Aggressive" };
+                // Initialize dictionary for this event type if it doesn't exist
+                if (!responseTable.ContainsKey(eventType))
+                {
+                    responseTable[eventType] = new Dictionary<string, EmotionalResponseValues>();
+                }
+                
+                // Add the response to the table
+                responseTable[eventType][emotionalState] = response;
+            }
+            
+            Debug.Log($"Successfully loaded emotional responses from {csvPath}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Error loading emotional responses from CSV: {e.Message}");
+            // Initialize with default values as fallback
+            InitializeDefaultResponses();
+        }
+    }
 
-        // Initialize the table structure
+    // Fallback method with default values if CSV loading fails
+    private void InitializeDefaultResponses()
+    {
+        Debug.Log("Initializing default emotional responses");
+        responseTable = new Dictionary<string, Dictionary<string, EmotionalResponseValues>>();
+        
+        // Add a basic set of default responses
+        string[] events = { "TouchNeeded", "RestNeeded", "SocialNeeded", "HungerNeeded", 
+                          "TouchFulfilled", "RestFulfilled", "SocialFulfilled", "HungerFulfilled",
+                          "StrokeFrontToBack", "StrokeBackToFront" };
+        string[] states = { "Happy", "Neutral", "Sad" };
+        
         foreach (string eventType in events)
         {
             responseTable[eventType] = new Dictionary<string, EmotionalResponseValues>();
-            
             foreach (string state in states)
             {
-                // Default values
                 responseTable[eventType][state] = new EmotionalResponseValues
-                {Valence = 0f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f};
+                {
+                    Valence = 0f,
+                    Arousal = 0f,
+                    Touch = 0f,
+                    Rest = 0f,
+                    Social = 0f
+                };
             }
         }
-
-        // Set specific values for different combinations
-        // Need Gauge Lower Need Thresholds
-        responseTable["TouchNeeded"]["Happy"] = new EmotionalResponseValues
-        {Valence = -5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = -5f};
-        responseTable["RestNeeded"]["Happy"] = new EmotionalResponseValues
-        {Valence = 0f, Arousal = -10f, Touch = 0f, Rest = 0f, Social = 0f};
-        responseTable["SocialNeeded"]["Happy"] = new EmotionalResponseValues
-        {Valence = -5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 0f};
-        responseTable["HungerNeeded"]["Happy"] = new EmotionalResponseValues
-        {Valence = 0f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 0f};
-        // Need Gauge Upper FulfilledThresholds
-        responseTable["TouchFulfilled"]["Happy"] = new EmotionalResponseValues
-        {Valence = 10f, Arousal = 5f, Touch = 10f, Rest = 0f, Social = 5f};
-        responseTable["RestFulfilled"]["Happy"] = new EmotionalResponseValues
-        {Valence = 5f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f};
-        responseTable["SocialFulfilled"]["Happy"] = new EmotionalResponseValues
-        {Valence = 5f, Arousal = -5f, Touch = 0f, Rest = 0f, Social = 0f};
-        responseTable["HungerFulfilled"]["Happy"] = new EmotionalResponseValues
-        {Valence = 5f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f};
-        // Stroke Events
-        responseTable["StrokeFrontToBack"]["Happy"] = new EmotionalResponseValues
-        {Valence = 10f, Arousal = 5f, Touch = 10f, Rest = 0f, Social = 5f};
-        responseTable["StrokeBackToFront"]["Happy"] = new EmotionalResponseValues
-        {Valence = 5f, Arousal = 5f, Touch = 10f, Rest = -5f, Social = 5f};
-        // Add more specific values here...
     }
 
     private string emotionalDisplayTable(EmotionalResponseValues response)
@@ -393,10 +442,8 @@ public class EmotionModel : MonoBehaviour
                                  " Social: " + response.Social);
         
         //fuzz valence and arousal values
-        float fuzzedValence = response.Valence + Random.Range(-3f, 3f);
-        float fuzzedArousal = response.Arousal + Random.Range(-3f, 3f);
-
-
+        float fuzzedValence = response.Valence + UnityEngine.Random.Range(-3f, 3f);
+        float fuzzedArousal = response.Arousal + UnityEngine.Random.Range(-3f, 3f);
 
         //add a small percentage (5%?) of these values to the robot's long term valence and arousal.
         moodValence += fuzzedValence * 0.01f;
