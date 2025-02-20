@@ -456,6 +456,13 @@ public class EmotionModel : MonoBehaviour
                   " fuzzed to " + fuzzedArousal + 
                   "and 5%" + fuzzedArousal*0.01f + "added to mood arousal");
 
+
+
+        //TODO: could also add the logic here to handle special events, e.g., if Rest <10 a special
+        //sleeping display is triggered and the normal table is bypassed. SceneController will 
+        //do something similar for user-initiated special events, such as saying Qoobo's name.
+        //Only if the triggeredEvent is not a special event will the normal table be used.
+
         if (fuzzedArousal > 6){
             if (fuzzedValence > 6){
                 displayString = "Excited";
@@ -546,4 +553,19 @@ public class EmotionModel : MonoBehaviour
         Debug.Log("Reset long term emotional values to defaults");
     }
 
+    // Public accessors for current mood state
+    public string GetCurrentMood()
+    {
+        return classifyEmotionalState(moodValence, moodArousal);
+    }
+
+    public float GetMoodValence()
+    {
+        return moodValence;
+    }
+
+    public float GetMoodArousal()
+    {
+        return moodArousal;
+    }
 } 

@@ -6,32 +6,24 @@ public class EmotionController : MonoBehaviour
 {
     [Header("References")]
     [SerializeField] private SceneController sceneController;
+    [SerializeField] private EmotionModel emotionModel;
     [SerializeField] private TextMeshProUGUI emotionText;
 
     [Header("Debug Settings")]
     [SerializeField] private bool showDebugText = true;
     [SerializeField] private string emotionFormat = "Emotion: {0}";
 
-    [Header("Emotion Control")]
-    [SerializeField] private Emotion manualEmotion = Emotion.Neutral;
-    [SerializeField] private float initialEmotionDelay = 1f;
-    [SerializeField] private float emotionCooldown = 2f;  // Cooldown period before another emotion can be expressed
-    [SerializeField] private float emotionDuration = 10f;  // Duration before returning to neutral
+    [Header("Display Settings")]
+    [SerializeField] private float displayDuration = 10f;  // Duration before returning to neutral
+    [SerializeField] private float displayCooldown = 5f;   // Cooldown period before another display can be shown
+    [SerializeField] private float passiveUpdateInterval = 5f; // How often to update passive expression
 
-    private Emotion currentEmotion = Emotion.Neutral;
     private bool hasInitialized = false;
-    private float lastEmotionTime = -999f;  // Track when the last emotion was expressed
-    private Coroutine resetCoroutine;  // Track the auto-reset coroutine
-
-    public enum Emotion
-    {
-        Happy,
-        Sad,
-        Angry,
-        Scared,
-        Surprised,
-        Neutral
-    }
+    private float lastDisplayTime = -999f;
+    private float lastPassiveUpdateTime = 0f;
+    private Coroutine resetCoroutine;
+    private string currentDisplayString = "Neutral";
+    private bool isShowingEmotionalDisplay = false;
 
     private void Start()
     {
@@ -42,70 +34,223 @@ public class EmotionController : MonoBehaviour
             return;
         }
 
-        // Set the current emotion without expressing it
-        currentEmotion = manualEmotion;
-        UpdateEmotionDisplay();
-
-        // Wait before expressing the initial emotion
-        StartCoroutine(InitialEmotionDelay());
-    }
-
-    private IEnumerator InitialEmotionDelay()
-    {
-        yield return new WaitForSeconds(initialEmotionDelay);
-        hasInitialized = true;
-        
-        // Only express emotion if wake-up is complete
-        if (sceneController.IsWakeUpComplete())
+        if (emotionModel == null)
         {
-            ExpressEmotion();
-        }
-    }
-
-    private void OnValidate()
-    {
-        // Only update during play mode and after initialization
-        if (Application.isPlaying && hasInitialized && manualEmotion != currentEmotion)
-        {
-            SetEmotion(manualEmotion);
-        }
-    }
-
-    public void SetEmotion(Emotion emotion)
-    {
-        if (showDebugText)
-            Debug.Log($"SetEmotion called with: {emotion}");
-        
-        // Check if we're in cooldown
-        if (Time.time - lastEmotionTime < emotionCooldown)
-        {
-            if (showDebugText)
-                Debug.Log($"Emotion in cooldown. Remaining: {emotionCooldown - (Time.time - lastEmotionTime):F2}s");
+            Debug.LogError("EmotionModel reference not set in EmotionController!");
+            enabled = false;
             return;
         }
 
-        currentEmotion = emotion;
-        manualEmotion = emotion; // Keep inspector value in sync
-        
-        // Only express emotion if initialized and wake-up is complete
-        if (hasInitialized && sceneController.IsWakeUpComplete())
-        {
-            ExpressEmotion();
-        }
+        hasInitialized = true;
         UpdateEmotionDisplay();
     }
 
-    public void SetEmotion(string emotionName)
+    private void Update()
     {
-        if (showDebugText)
-            Debug.Log($"SetEmotion called with string: {emotionName}");
-        if (System.Enum.TryParse(emotionName, true, out Emotion emotion))
+        // Only update passive expression if not showing an emotional display
+        if (!isShowingEmotionalDisplay && Time.time - lastPassiveUpdateTime >= passiveUpdateInterval)
         {
-            SetEmotion(emotion);
+            UpdatePassiveExpression();
+            lastPassiveUpdateTime = Time.time;
         }
-        else
+    }
+
+    private void UpdatePassiveExpression()
+    {
+        if (!hasInitialized || !sceneController.IsWakeUpComplete()) return;
+
+        string currentMood = emotionModel.GetCurrentMood();
+        
+        if (showDebugText)
+            Debug.Log($"Updating passive expression based on mood: {currentMood}");
+
+        // Set passive expression based on mood
+        switch (currentMood.ToLower())
         {
-            Debug.LogWarning($"Invalid emotion name: {emotionName}");
+            case "excited":
+                sceneController.SetFaceExpression("happy");
+                break;
+
+            case "happy":
+                sceneController.SetFaceExpression("happy");
+                break;
+
+            case "relaxed":
+                sceneController.SetFaceExpression("happy");
+                break;
+
+            case "energetic":
+                sceneController.SetFaceExpression("surprised");
+                break;
+
+            case "neutral":
+                sceneController.SetFaceExpression("neutral");
+                break;
+
+            case "lethargic":
+                sceneController.SetFaceExpression("sad");
+                break;
+
+            case "aggressive":
+                sceneController.SetFaceExpression("angry");
+                break;
+
+            case "sad":
+                sceneController.SetFaceExpression("sad");
+                break;
+
+            case "gloomy":
+                sceneController.SetFaceExpression("sad");
+                break;
+
+            default:
+                sceneController.SetFaceExpression("neutral");
+                break;
+        }
+    }
+
+    public void DisplayEmotion(string displayString)
+    {
+        if (!hasInitialized || !sceneController.IsWakeUpComplete())
+        {
+            Debug.Log("Cannot display emotion - system not initialized or wake-up not complete");
+            return;
+        }
+
+        // Check cooldown
+        if (Time.time - lastDisplayTime < displayCooldown)
+        {
+            if (showDebugText)
+                Debug.Log($"Display in cooldown. Remaining: {displayCooldown - (Time.time - lastDisplayTime):F2}s");
+            return;
+        }
+
+        if (showDebugText)
+            Debug.Log($"Displaying emotion: {displayString}");
+
+        currentDisplayString = displayString;
+        isShowingEmotionalDisplay = true;
+        
+        // Cancel any pending reset
+        if (resetCoroutine != null)
+        {
+            StopCoroutine(resetCoroutine);
+        }
+
+        // Display the emotion through different modalities based on the display string
+        switch (displayString.ToLower())
+        {
+            case "excited":
+                sceneController.ShowColouredLight("happy");
+                sceneController.PlaySound("happy");
+                sceneController.ShowThought("exclamation");
+                sceneController.SetFaceExpression("happy");
+                sceneController.TailsEmotion("happy");
+                break;
+
+            case "happy":
+                sceneController.ShowColouredLight("happy");
+                sceneController.PlaySound("happy");
+                sceneController.ShowThought("happy");
+                sceneController.SetFaceExpression("happy");
+                sceneController.TailsEmotion("happy");
+                break;
+
+            case "relaxed":
+                sceneController.ShowColouredLight("happy");
+                sceneController.PlaySound("happy");
+                sceneController.ShowThought("happy");
+                sceneController.SetFaceExpression("happy");
+                sceneController.TailsEmotion("happy");
+                break;
+
+            case "shocked":
+                sceneController.ShowColouredLight("surprised");
+                sceneController.PlaySound("surprised");
+                sceneController.ShowThought("surprised");
+                sceneController.SetFaceExpression("surprised");
+                sceneController.TailsEmotion("surprised");
+                break;
+
+            case "annoyed":
+                sceneController.ShowColouredLight("angry");
+                sceneController.PlaySound("angry");
+                sceneController.ShowThought("angry");
+                sceneController.SetFaceExpression("angry");
+                sceneController.TailsEmotion("angry");
+                break;
+
+            case "angry":
+                sceneController.ShowColouredLight("angry");
+                sceneController.PlaySound("angry");
+                sceneController.ShowThought("angry");
+                sceneController.SetFaceExpression("angry");
+                sceneController.TailsEmotion("angry");
+                break;
+
+            case "alert":
+                sceneController.ShowColouredLight("surprised");
+                sceneController.PlaySound("surprised");
+                sceneController.ShowThought("surprised");
+                sceneController.SetFaceExpression("surprised");
+                sceneController.TailsEmotion("surprised");
+                break;
+
+            case "neutral":
+                sceneController.HideLightSphere();
+                sceneController.HideThought();
+                UpdatePassiveExpression(); // Return to mood-based expression
+                sceneController.TailsEmotion("neutral");
+                break;
+
+            case "sad":
+                sceneController.ShowColouredLight("sad");
+                sceneController.PlaySound("sad");
+                sceneController.ShowThought("sad");
+                sceneController.SetFaceExpression("sad");
+                sceneController.TailsEmotion("sad");
+                break;
+
+            case "crying":
+                sceneController.ShowColouredLight("sad");
+                sceneController.PlaySound("sad");
+                sceneController.ShowThought("sad");
+                sceneController.SetFaceExpression("sad");
+                sceneController.TailsEmotion("sad");
+                break;
+
+            case "tired":
+                sceneController.ShowColouredLight("sad");
+                sceneController.PlaySound("sad");
+                sceneController.ShowThought("tired");
+                sceneController.SetFaceExpression("sad");
+                sceneController.TailsEmotion("sad");
+                break;
+
+            case "sleepy":
+                sceneController.ShowColouredLight("sad");
+                sceneController.PlaySound("sad");
+                sceneController.ShowThought("sleep");
+                sceneController.SetFaceExpression("sad");
+                sceneController.TailsEmotion("sad");
+                break;
+
+            default:
+                Debug.LogWarning($"Unknown display string: {displayString}, defaulting to neutral");
+                sceneController.HideLightSphere();
+                sceneController.HideThought();
+                UpdatePassiveExpression(); // Return to mood-based expression
+                sceneController.TailsEmotion("neutral");
+                break;
+        }
+
+        // Update display time and start auto-reset timer
+        lastDisplayTime = Time.time;
+        UpdateEmotionDisplay();
+
+        if (displayString.ToLower() != "neutral")
+        {
+            resetCoroutine = StartCoroutine(AutoResetDisplay());
         }
     }
 
@@ -113,122 +258,31 @@ public class EmotionController : MonoBehaviour
     {
         if (emotionText != null)
         {
-            emotionText.text = string.Format(emotionFormat, currentEmotion.ToString());
+            emotionText.text = string.Format(emotionFormat, currentDisplayString);
         }
     }
 
     public void SetDebugTextVisibility(bool visible)
     {
         showDebugText = visible;
+        if (emotionText != null)
+        {
+            emotionText.enabled = visible;
+        }
     }
 
-    [ContextMenu("Express Emotion")]
-    public void ExpressEmotion()
+    private IEnumerator AutoResetDisplay()
     {
-        if (sceneController == null) return;
-
-        // Cancel any pending reset
-        if (resetCoroutine != null)
-        {
-            StopCoroutine(resetCoroutine);
-        }
-
-        string emotionName = currentEmotion.ToString().ToLower();
-        
-        // Trigger all expression methods
-        sceneController.ShowColouredLight(emotionName);
-        sceneController.PlaySound(emotionName);
-        sceneController.ShowThought(emotionName);
-        sceneController.SetFaceExpression(emotionName);
-        sceneController.TailsEmotion(emotionName);
-
-        // Update last emotion time
-        lastEmotionTime = Time.time;
-
-        // Start auto-reset timer if not neutral
-        if (currentEmotion != Emotion.Neutral)
-        {
-            resetCoroutine = StartCoroutine(AutoResetEmotion());
-        }
-
-        if (showDebugText)
-            Debug.Log($"Expressing emotion: {currentEmotion}");
-    }
-
-    private IEnumerator AutoResetEmotion()
-    {
-        yield return new WaitForSeconds(emotionDuration);
+        yield return new WaitForSeconds(displayDuration);
 
         // Reset to neutral state
-        sceneController.HideLightSphere();
-        sceneController.HideThought();
-        sceneController.SetFaceExpression("neutral");
-        sceneController.TailsEmotion("neutral");
-
-        // Update internal state
-        currentEmotion = Emotion.Neutral;
-        manualEmotion = Emotion.Neutral;
-        UpdateEmotionDisplay();
-
-        Debug.Log("Auto-reset to neutral state");
+        isShowingEmotionalDisplay = false;
+        DisplayEmotion("neutral");
+        Debug.Log("Auto-reset to neutral display state");
     }
 
-    public Emotion GetCurrentEmotion()
+    public string GetCurrentDisplayString()
     {
-        return currentEmotion;
-    }
-
-    // Convenience methods for setting emotions
-
-    [ContextMenu("Set Happy")]
-    public void SetHappy() => SetEmotion(Emotion.Happy);
-
-    [ContextMenu("Set Sad")]
-    public void SetSad() => SetEmotion(Emotion.Sad);
-
-    [ContextMenu("Set Angry")]
-    public void SetAngry() => SetEmotion(Emotion.Angry);
-
-    [ContextMenu("Set Scared")]
-    public void SetScared() => SetEmotion(Emotion.Scared);
-
-    [ContextMenu("Set Surprised")]
-    public void SetSurprised() => SetEmotion(Emotion.Surprised);
-
-    [ContextMenu("Set Neutral")]
-    public void SetNeutral() => SetEmotion(Emotion.Neutral);
-
-    // Context menu items for testing in Unity Editor
-    [ContextMenu("Express Happy")]
-    private void ExpressHappy() => SetHappy();
-
-    [ContextMenu("Express Sad")]
-    private void ExpressSad() => SetSad();
-
-    [ContextMenu("Express Angry")]
-    private void ExpressAngry() => SetAngry();
-
-    [ContextMenu("Express Scared")]
-    private void ExpressScared() => SetScared();
-
-    [ContextMenu("Express Surprised")]
-    private void ExpressSurprised() => SetSurprised();
-
-    [ContextMenu("Express Neutral")]
-    private void ExpressNeutral() => SetNeutral();
-
-    // Add this method to handle voice-detected emotions
-    public void HandleVoiceEmotion(string emotion)
-    {
-        // Convert the emotion string to our enum
-        if (System.Enum.TryParse<Emotion>(emotion, true, out Emotion detectedEmotion))
-        {
-            SetEmotion(detectedEmotion);
-            ExpressEmotion();
-        }
-        else
-        {
-            Debug.LogWarning($"EmotionController: Couldn't parse emotion string: {emotion}");
-        }
+        return currentDisplayString;
     }
 } 

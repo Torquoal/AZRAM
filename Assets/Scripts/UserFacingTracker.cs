@@ -42,8 +42,7 @@ public class UserFacingTracker : MonoBehaviour
 
         if ((angleToQoobo < 15f) && (sceneController.wakeUpComplete) && (!hasShown))
         {
-            sceneController.ShowThought("looking");
-            sceneController.PlaySound("peep");
+            // add triggeredEvent
             hasShown = true;
         }
 

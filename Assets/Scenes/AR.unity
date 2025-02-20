@@ -9612,7 +9612,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b2c9eca53792884b81c596ac2c0d1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  longTermValence: -0
+  longTermValence: 10
   longTermArousal: 0
   moodValence: 0
   moodArousal: 0

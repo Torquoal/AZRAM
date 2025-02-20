@@ -25,6 +25,10 @@ public class SceneController : MonoBehaviour
     public bool wakeUpComplete = false;
 
 
+    // *** USER INPUT INTERACTIONS ***
+    /*
+    ** TOUCH CONTROL
+    */
     void Start()
     {
         // Subscribe to stroke events
@@ -33,7 +37,6 @@ public class SceneController : MonoBehaviour
             strokeDetector.OnStrokeDetected += HandleStrokeDetected;
         }
     }
-
     void OnDestroy()
     {
         // Unsubscribe from stroke events
@@ -42,7 +45,6 @@ public class SceneController : MonoBehaviour
             strokeDetector.OnStrokeDetected -= HandleStrokeDetected;
         }
     }
-
     private void HandleStrokeDetected(StrokeDetector.StrokeDirection direction)
     {
         if (isWakingUp) return;
@@ -54,23 +56,21 @@ public class SceneController : MonoBehaviour
         switch (direction)
         {
             case StrokeDetector.StrokeDirection.FrontToBack:
-                emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
-                emotionController.SetEmotion("happy");
-                emotionController.ExpressEmotion();
+                string displayString = emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
+                emotionController.DisplayEmotion(displayString);
                 break;
             case StrokeDetector.StrokeDirection.BackToFront:
-                emotionController.SetEmotion("angry");
-                emotionController.ExpressEmotion();
+                displayString = emotionModel.CalculateEmotionalResponse("StrokeBackToFront");
+                emotionController.DisplayEmotion(displayString);
                 break;
             case StrokeDetector.StrokeDirection.HoldLeft:
-                ShowColouredLight("surprised");
+                // Removed direct emotion call: ShowColouredLight("surprised")
                 break;
             case StrokeDetector.StrokeDirection.HoldRight:
-                ShowThought("heart");
+                // Removed direct emotion call: ShowColouredLight("surprised")
                 break;
             case StrokeDetector.StrokeDirection.HoldTop:
-                emotionController.SetEmotion("happy");  
-                emotionController.ExpressEmotion();
+
                 break;
             default:
                 Debug.Log($"Unhandled stroke direction: {direction}");
@@ -79,7 +79,9 @@ public class SceneController : MonoBehaviour
 
         Debug.Log($"Stroke detected: {direction}");
     }
-
+    /*
+    ** DISTANCE CONTROL
+    */
     void Update()
     {
         // Only perform checks if wake-up is complete
@@ -94,23 +96,43 @@ public class SceneController : MonoBehaviour
             // Show sadness if too far away
             if (distance > maxDistance && !isShowingSadness && !isWakingUp)
             {
-                emotionController.SetEmotion("sad");
-                emotionController.ExpressEmotion();
+                string displayString = emotionModel.CalculateEmotionalResponse("TooFarAway");
+                emotionController.DisplayEmotion(displayString);
                 isShowingSadness = true;
             }
-            // Reset when back in range
+            // Triggers when user is back in range
             else if (distance <= maxDistance && isShowingSadness)
             {
-                emotionController.SetEmotion("neutral");
-                emotionController.ExpressEmotion();
+                // Removed direct emotion call: SetEmotion("neutral")
                 isShowingSadness = false;
             }
         }
-
     }
+    // Distance tracking methods
+    public float GetDistanceToPlayer()
+    {
+        if (distanceTracker != null)
+        {
+            return distanceTracker.GetCurrentDistance();
+        }
+        return -1f; // Invalid distance
+    }
+    
+    /*
+    ** VOICE CONTROL - See VoiceDetector.cs
+    */
+
+    /*
+    ** GAZE CONTROL - See UserFacingTracker.cs
+    */
 
 
-    // Audio control methods
+
+    // *** ROBOT DISPLAY MODALITIES ***
+    /*
+    ** SOUND CONTROL
+    */
+
     public void PlaySound(string emotion)
     {
         if (isWakingUp && emotion != "peep")
@@ -123,9 +145,10 @@ public class SceneController : MonoBehaviour
         {
             audioController.PlaySound(emotion);
         }
-    }
-
-    // Emotion to light color mapping
+    }  
+    /*
+    ** LIGHT CONTROL
+    */ 
     public void ShowColouredLight(string emotion)
     {
         if (isWakingUp)
@@ -163,7 +186,9 @@ public class SceneController : MonoBehaviour
         if (lightSphere != null)
             lightSphere.SetScale(scale);
     }
-
+    /*
+    ** TAIL CONTROL
+    */
     public void TailsEmotion(string emotion)
     {
         if (tailAnimations != null)
@@ -171,8 +196,9 @@ public class SceneController : MonoBehaviour
             tailAnimations.PlayTailAnimation(emotion);
         }
     }
-
-    // Thought bubble methods
+    /*
+    ** THOUGHT BUBBLE CONTROL
+    */
     public void ShowThought(string emotion)
     {
         if (isWakingUp)
@@ -194,60 +220,9 @@ public class SceneController : MonoBehaviour
             thoughtBubble.HideThought();
         }
     }
-
-    // Convenience methods
-    [ContextMenu("Show Happy Thought")]
-    public void ShowHappyThought() => ShowThought("happy");
-
-    [ContextMenu("Show Sad Thought")]
-    public void ShowSadThought() => ShowThought("sad");
-
-    [ContextMenu("Show Angry Thought")]
-    public void ShowAngryThought() => ShowThought("angry");
-
-    public void ResetCamera()
-    {
-        // Find the XR Origin or Camera Rig
-        var xrOrigin = GameObject.Find("XR Origin");
-        if (xrOrigin == null)
-        {
-            xrOrigin = GameObject.Find("Camera Rig"); // Fallback name
-        }
-
-        if (xrOrigin != null)
-        {
-            // Get the camera's forward direction but zero out the Y component
-            var mainCamera = Camera.main;
-            if (mainCamera != null)
-            {
-                Vector3 cameraForward = mainCamera.transform.forward;
-                cameraForward.y = 0;
-                cameraForward.Normalize();
-
-                // Reset the XR Origin position
-                Vector3 currentPos = xrOrigin.transform.position;
-                xrOrigin.transform.position = new Vector3(0, currentPos.y, 0); // Keep current height
-
-                // Reset the XR Origin rotation to face forward
-                if (cameraForward != Vector3.zero)
-                {
-                    xrOrigin.transform.rotation = Quaternion.LookRotation(cameraForward);
-                }
-                else
-                {
-                    xrOrigin.transform.rotation = Quaternion.identity;
-                }
-
-                Debug.Log("Camera view reset");
-            }
-        }
-        else
-        {
-            Debug.LogWarning("Could not find XR Origin or Camera Rig");
-        }
-    }
-
-    // Wake up sequence methods
+    /*
+    ** WAKE UP SEQUENCE CONTROL
+    */
     public void StartWakeUpSequence()
     {
         if (isWakingUp) return; // Prevent multiple wake-up sequences
@@ -297,18 +272,15 @@ public class SceneController : MonoBehaviour
         isWakingUp = false;
         wakeUpComplete = true;
         Debug.Log("Wake-up sequence complete");
-
-      
     }
-
-   
 
     public bool IsWakeUpComplete()
     {
         return wakeUpComplete;
     }
-
-    // Face control methods
+    /*
+    ** FACE CONTROL
+    */
     public void SetFaceExpression(string expression)
     {
         if (isWakingUp)
@@ -323,15 +295,56 @@ public class SceneController : MonoBehaviour
         }
     }
 
-    // Distance tracking methods
-    public float GetDistanceToPlayer()
+
+    // *** UTILITY METHODS ***
+    /*
+    ** CAMERA CONTROL
+    */
+
+    public void ResetCamera()
     {
-        if (distanceTracker != null)
+        // Find the XR Origin or Camera Rig
+        var xrOrigin = GameObject.Find("XR Origin");
+        if (xrOrigin == null)
         {
-            return distanceTracker.GetCurrentDistance();
+            xrOrigin = GameObject.Find("Camera Rig"); // Fallback name
         }
-        return -1f; // Invalid distance
+
+        if (xrOrigin != null)
+        {
+            // Get the camera's forward direction but zero out the Y component
+            var mainCamera = Camera.main;
+            if (mainCamera != null)
+            {
+                Vector3 cameraForward = mainCamera.transform.forward;
+                cameraForward.y = 0;
+                cameraForward.Normalize();
+
+                // Reset the XR Origin position
+                Vector3 currentPos = xrOrigin.transform.position;
+                xrOrigin.transform.position = new Vector3(0, currentPos.y, 0); // Keep current height
+
+                // Reset the XR Origin rotation to face forward
+                if (cameraForward != Vector3.zero)
+                {
+                    xrOrigin.transform.rotation = Quaternion.LookRotation(cameraForward);
+                }
+                else
+                {
+                    xrOrigin.transform.rotation = Quaternion.identity;
+                }
+
+                Debug.Log("Camera view reset");
+            }
+        }
+        else
+        {
+            Debug.LogWarning("Could not find XR Origin or Camera Rig");
+        }
     }
+    /*
+    ** DEBUG CONTROL
+    */  
 
     public void SetDistanceDebugVisible(bool visible)
     {

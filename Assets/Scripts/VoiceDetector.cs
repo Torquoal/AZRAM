@@ -234,49 +234,48 @@ public class VoiceDetector : MonoBehaviour
             case "Name":
                 if (showDebugLogs)
                     Debug.Log("Detected: Qoobo's name was called!");
-                sceneController.ShowThought("Exclamation");
-                sceneController.PlaySound("beep");
+                // add triggeredEvent
                 break;
 
             case "Happy":
                 if (showDebugLogs)
                     Debug.Log("Detected: A happy word!");
-                emotionController.SetEmotion("Happy");
-                emotionController.ExpressEmotion();
+                // add triggeredEvent
                 break;
 
             case "Sad":
                 if (showDebugLogs)
                     Debug.Log("Detected: A sad word!");
+                // add triggeredEvent
                 break;
 
             case "Angry":
                 if (showDebugLogs)
                     Debug.Log("Detected: An angry word!");
+                // add triggeredEvent
                 break;
 
             case "Greeting":
                 if (showDebugLogs)
                     Debug.Log("Detected: A greeting!");
-                sceneController.ShowThought("Exclamation");
-                sceneController.PlaySound("beep");
+                // add triggeredEvent
                 break;
 
             case "Farewell":
                 if (showDebugLogs)
                     Debug.Log("Detected: A farewell!");
+                // add triggeredEvent
                 break;
 
             case "Praise":
                 if (showDebugLogs)
                     Debug.Log("Detected: Words of praise!");
-                sceneController.ShowThought("Exclamation");
-                sceneController.PlaySound("beep");
+                // add triggeredEvent
                 break;
             case "Food":
                 if (showDebugLogs)
                     Debug.Log("Detected: Food word!");
-                sceneController.ShowThought("Hungry");
+                // add triggeredEvent
                 break;
         }
     }
