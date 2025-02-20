@@ -29,6 +29,13 @@ public class SceneController : MonoBehaviour
     /*
     ** TOUCH CONTROL
     */
+
+    [ContextMenu("Test Touch Control")]
+    private void TestTouchControl()
+    {
+        HandleStrokeDetected(StrokeDetector.StrokeDirection.FrontToBack);
+    }
+
     void Start()
     {
         // Subscribe to stroke events
@@ -49,28 +56,26 @@ public class SceneController : MonoBehaviour
     {
         if (isWakingUp) return;
 
-        // Play happy sound and show happy expression
-        PlaySound("happy");
-        
-        // Show appropriate light color based on stroke direction
         switch (direction)
         {
             case StrokeDetector.StrokeDirection.FrontToBack:
+                Debug.Log("Stroke detected: FrontToBack");
                 string displayString = emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
                 emotionController.DisplayEmotion(displayString);
                 break;
             case StrokeDetector.StrokeDirection.BackToFront:
+                Debug.Log("Stroke detected: BackToFront");
                 displayString = emotionModel.CalculateEmotionalResponse("StrokeBackToFront");
                 emotionController.DisplayEmotion(displayString);
                 break;
             case StrokeDetector.StrokeDirection.HoldLeft:
-                // Removed direct emotion call: ShowColouredLight("surprised")
+                Debug.Log("Stroke detected: HoldLeft");
                 break;
             case StrokeDetector.StrokeDirection.HoldRight:
-                // Removed direct emotion call: ShowColouredLight("surprised")
+                Debug.Log("Stroke detected: HoldRight");
                 break;
             case StrokeDetector.StrokeDirection.HoldTop:
-
+                Debug.Log("Stroke detected: HoldTop");  
                 break;
             default:
                 Debug.Log($"Unhandled stroke direction: {direction}");
@@ -117,7 +122,7 @@ public class SceneController : MonoBehaviour
         }
         return -1f; // Invalid distance
     }
-    
+
     /*
     ** VOICE CONTROL - See VoiceDetector.cs
     */

@@ -206,11 +206,11 @@ public class EmotionModel : MonoBehaviour
         {
             LogGaugeValues();
             // Also log accumulators for debugging
-            Debug.Log($"Decay Accumulators:\n" +
-                     $"Touch: {touchDecayAccumulator:F3}\n" +
-                     $"Rest: {restDecayAccumulator:F3}\n" +
-                     $"Social: {socialDecayAccumulator:F3}\n" +
-                     $"Hunger: {hungerDecayAccumulator:F3}");
+            //Debug.Log($"Decay Accumulators:\n" +
+            //         $"Touch: {touchDecayAccumulator:F3}\n" +
+            //         $"Rest: {restDecayAccumulator:F3}\n" +
+            //         $"Social: {socialDecayAccumulator:F3}\n" +
+            //         $"Hunger: {hungerDecayAccumulator:F3}");
             gaugeLogTimer = 0f;
         }
     }
@@ -222,7 +222,7 @@ public class EmotionModel : MonoBehaviour
             $"Rest:   {restGauge,3}/100 (Need: {restNeeded}, Fulfilled: {restFulfilled})\n" +
             $"Social: {socialGauge,3}/100 (Need: {socialNeeded}, Fulfilled: {socialFulfilled})\n" +
             $"Hunger: {hungerGauge,3}/100 (Need: {hungerNeeded}, Fulfilled: {hungerFulfilled})";
-        Debug.Log(gaugeStatus);
+        //Debug.Log(gaugeStatus);
     }
 
     private void CheckNeedThreshold(string needName, float currentValue, float previousValue, float neededThreshold, float fulfilledThreshold)

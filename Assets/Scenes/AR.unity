@@ -9554,13 +9554,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   sceneController: {fileID: 799751467}
+  emotionModel: {fileID: 799751474}
   emotionText: {fileID: 996060955}
   showDebugText: 1
   emotionFormat: 'Emotion: {0}'
-  manualEmotion: 0
-  initialEmotionDelay: 1
-  emotionCooldown: 10
-  emotionDuration: 10
+  displayDuration: 10
+  displayCooldown: 5
+  passiveUpdateInterval: 10
 --- !u!114 &799751472
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9612,8 +9612,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b2c9eca53792884b81c596ac2c0d1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  longTermValence: 10
-  longTermArousal: 0
+  longTermValence: 7
+  longTermArousal: 7
   moodValence: 0
   moodArousal: 0
   currentTemperament: 

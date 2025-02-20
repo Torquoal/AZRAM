@@ -23,6 +23,7 @@ SocialFulfilled,Sad,0,0,0,0,0
 HungerFulfilled,Happy,5,0,0,0,0
 HungerFulfilled,Neutral,0,0,0,0,0
 HungerFulfilled,Sad,0,0,0,0,0
+StrokeFrontToBack,Excited,10,10,10,0,5
 StrokeFrontToBack,Happy,10,5,10,0,5
 StrokeFrontToBack,Neutral,0,0,0,0,0
 StrokeFrontToBack,Sad,0,0,0,0,0

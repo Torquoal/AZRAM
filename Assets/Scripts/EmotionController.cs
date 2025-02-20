@@ -142,7 +142,7 @@ public class EmotionController : MonoBehaviour
         {
             case "excited":
                 sceneController.ShowColouredLight("happy");
-                sceneController.PlaySound("happy");
+                sceneController.PlaySound("surprised");
                 sceneController.ShowThought("exclamation");
                 sceneController.SetFaceExpression("happy");
                 sceneController.TailsEmotion("happy");
@@ -157,8 +157,8 @@ public class EmotionController : MonoBehaviour
                 break;
 
             case "relaxed":
-                sceneController.ShowColouredLight("happy");
-                sceneController.PlaySound("happy");
+                //sceneController.ShowColouredLight("happy");
+                //sceneController.PlaySound("happy");
                 sceneController.ShowThought("happy");
                 sceneController.SetFaceExpression("happy");
                 sceneController.TailsEmotion("happy");
@@ -204,7 +204,7 @@ public class EmotionController : MonoBehaviour
                 break;
 
             case "sad":
-                sceneController.ShowColouredLight("sad");
+                //sceneController.ShowColouredLight("sad");
                 sceneController.PlaySound("sad");
                 sceneController.ShowThought("sad");
                 sceneController.SetFaceExpression("sad");
@@ -220,19 +220,19 @@ public class EmotionController : MonoBehaviour
                 break;
 
             case "tired":
-                sceneController.ShowColouredLight("sad");
-                sceneController.PlaySound("sad");
+                //sceneController.ShowColouredLight("sad");
+                //sceneController.PlaySound("sad");
                 sceneController.ShowThought("tired");
-                sceneController.SetFaceExpression("sad");
-                sceneController.TailsEmotion("sad");
+                sceneController.SetFaceExpression("neutral");
+                sceneController.TailsEmotion("neutral");
                 break;
 
             case "sleepy":
-                sceneController.ShowColouredLight("sad");
-                sceneController.PlaySound("sad");
+                //sceneController.ShowColouredLight("sad");
+                //sceneController.PlaySound("sad");
                 sceneController.ShowThought("sleep");
-                sceneController.SetFaceExpression("sad");
-                sceneController.TailsEmotion("sad");
+                //sceneController.SetFaceExpression("sleepy");
+                //sceneController.TailsEmotion("sad");
                 break;
 
             default:
