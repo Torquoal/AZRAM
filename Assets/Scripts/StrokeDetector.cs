@@ -324,14 +324,18 @@ public class StrokeDetector : MonoBehaviour
     private StrokeType DetermineStrokeType(Collider triggerCollider)
     {
         if (triggerCollider == frontCollider || triggerCollider == backCollider)
+        {
             return StrokeType.FrontBack;
+        }
         return StrokeType.None;
     }
 
     private Collider DetermineExpectedNextTrigger(Collider currentTrigger)
     {
-        if (currentTrigger == frontCollider) return backCollider;
-        if (currentTrigger == backCollider) return frontCollider;
+        if (currentTrigger == frontCollider)
+            return backCollider;
+        if (currentTrigger == backCollider)
+            return frontCollider;
         return null;
     }
 
@@ -339,34 +343,31 @@ public class StrokeDetector : MonoBehaviour
     {
         if (triggerSequence.Count < 2) return;
 
-        var firstTrigger = triggerSequence[0];
-        var lastTrigger = triggerSequence[triggerSequence.Count - 1];
-        float strokeTime = lastTrigger.timestamp - firstTrigger.timestamp;
+        Collider firstTrigger = triggerSequence[0].trigger;
+        Collider lastTrigger = triggerSequence[triggerSequence.Count - 1].trigger;
 
-        if (showDebugLogs)
+        // Only process if we have front/back triggers
+        if ((firstTrigger != frontCollider && firstTrigger != backCollider) ||
+            (lastTrigger != frontCollider && lastTrigger != backCollider))
         {
-            Debug.Log($"\n=== Checking Stroke ===");
-            Debug.Log($"First trigger: {firstTrigger.trigger.name}");
-            Debug.Log($"Last trigger: {lastTrigger.trigger.name}");
-            Debug.Log($"Stroke time: {strokeTime:F3}s");
-        }
-
-        if (strokeTime > maxStrokeTime)
-        {
-            if (showDebugLogs)
-                Debug.Log($"Stroke too slow: {strokeTime:F3}s > {maxStrokeTime:F3}s");
-            ResetStrokeDetection();
             return;
         }
 
-        StrokeDirection direction = DetermineStrokeDirection(firstTrigger.trigger, lastTrigger.trigger);
+        StrokeDirection direction = DetermineStrokeDirection(firstTrigger, lastTrigger);
         
         if (direction != StrokeDirection.None)
         {
-            if (showDebugLogs)
-                Debug.Log($"Valid stroke detected: {direction}");
-            lastSuccessfulStrokeTime = Time.time; // Record the successful stroke time
-            OnStrokeDetected?.Invoke(direction);
+            if (Time.time - lastSuccessfulStrokeTime >= strokeCooldownTime)
+            {
+                OnStrokeDetected?.Invoke(direction);
+                lastSuccessfulStrokeTime = Time.time;
+                if (showDebugLogs)
+                    Debug.Log($"Stroke detected: {direction}");
+            }
+            else if (showDebugLogs)
+            {
+                Debug.Log($"Stroke ignored - in cooldown ({strokeCooldownTime - (Time.time - lastSuccessfulStrokeTime):F2}s remaining)");
+            }
         }
 
         ResetStrokeDetection();
@@ -374,12 +375,15 @@ public class StrokeDetector : MonoBehaviour
 
     private StrokeDirection DetermineStrokeDirection(Collider firstTrigger, Collider lastTrigger)
     {
-        // Front-back strokes only
         if (firstTrigger == frontCollider && lastTrigger == backCollider)
+        {
             return StrokeDirection.FrontToBack;
-        if (firstTrigger == backCollider && lastTrigger == frontCollider)
+        }
+        else if (firstTrigger == backCollider && lastTrigger == frontCollider)
+        {
             return StrokeDirection.BackToFront;
-
+        }
+        
         return StrokeDirection.None;
     }
 

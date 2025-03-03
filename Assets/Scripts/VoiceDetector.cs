@@ -55,6 +55,14 @@ public class VoiceDetector : MonoBehaviour
         }
     };
 
+    [Header("Volume Detection")]
+    [SerializeField] [Range(0f, 1f)] private float loudnessThreshold = 0.5f;
+    [SerializeField] private float volumeCheckInterval = 0.1f;
+    private float lastVolumeCheckTime = 0f;
+
+    public delegate void LoudSoundDetectedHandler();
+    public event LoudSoundDetectedHandler OnLoudSoundDetected;
+
     private AudioClip microphoneClip;
     private float[] audioBuffer;
     private string selectedDevice;
@@ -206,6 +214,13 @@ public class VoiceDetector : MonoBehaviour
 
             lastProcessedPosition = currentPosition;
         }
+
+        // Check volume at regular intervals
+        if (Time.time - lastVolumeCheckTime >= volumeCheckInterval)
+        {
+            CheckVolume();
+            lastVolumeCheckTime = Time.time;
+        }
     }
 
     private void ProcessRecognizedSpeech(string speech)
@@ -277,6 +292,32 @@ public class VoiceDetector : MonoBehaviour
                     Debug.Log("Detected: Food word!");
                 // add triggeredEvent
                 break;
+        }
+    }
+
+    private void CheckVolume()
+    {
+        if (microphoneClip == null) return;
+
+        int pos = Microphone.GetPosition(selectedDevice);
+        if (pos <= 0) return;
+
+        float[] samples = new float[1024];
+        microphoneClip.GetData(samples, pos - Mathf.Min(pos, samples.Length));
+
+        // Calculate RMS
+        float sum = 0f;
+        for (int i = 0; i < samples.Length; i++)
+        {
+            sum += samples[i] * samples[i];
+        }
+        float rms = Mathf.Sqrt(sum / samples.Length);
+
+        if (rms > loudnessThreshold)
+        {
+            if (showDebugLogs)
+                Debug.Log($"Loud sound detected! RMS: {rms:F3}");
+            OnLoudSoundDetected?.Invoke();
         }
     }
 

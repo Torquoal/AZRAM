@@ -55,18 +55,25 @@ public class SceneController : MonoBehaviour
     private void HandleStrokeDetected(StrokeDetector.StrokeDirection direction)
     {
         if (isWakingUp) return;
+        
+        // If asleep, don't respond to normal strokes
+        if (emotionModel.IsAsleep)
+        {
+            Debug.Log("Stroke detected but robot is asleep");
+            return;
+        }
 
         switch (direction)
         {
             case StrokeDetector.StrokeDirection.FrontToBack:
                 Debug.Log("Stroke detected: FrontToBack");
-                string displayString = emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
-                emotionController.DisplayEmotion(displayString);
+                var response = emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay);
                 break;
             case StrokeDetector.StrokeDirection.BackToFront:
                 Debug.Log("Stroke detected: BackToFront");
-                displayString = emotionModel.CalculateEmotionalResponse("StrokeBackToFront");
-                emotionController.DisplayEmotion(displayString);
+                response = emotionModel.CalculateEmotionalResponse("StrokeBackToFront");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay);
                 break;
             case StrokeDetector.StrokeDirection.HoldLeft:
                 Debug.Log("Stroke detected: HoldLeft");
@@ -81,8 +88,6 @@ public class SceneController : MonoBehaviour
                 Debug.Log($"Unhandled stroke direction: {direction}");
                 break;
         }
-
-        Debug.Log($"Stroke detected: {direction}");
     }
     /*
     ** DISTANCE CONTROL
@@ -91,6 +96,9 @@ public class SceneController : MonoBehaviour
     {
         // Only perform checks if wake-up is complete
         if (!wakeUpComplete) return;
+
+        // If asleep, skip distance checking
+        if (emotionModel.IsAsleep) return;
 
         // Check distance at regular intervals
         if (Time.time - lastDistanceCheckTime >= distanceCheckInterval)
@@ -101,14 +109,13 @@ public class SceneController : MonoBehaviour
             // Show sadness if too far away
             if (distance > maxDistance && !isShowingSadness && !isWakingUp)
             {
-                string displayString = emotionModel.CalculateEmotionalResponse("TooFarAway");
-                emotionController.DisplayEmotion(displayString);
+                var response = emotionModel.CalculateEmotionalResponse("TooFarAway");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay);
                 isShowingSadness = true;
             }
             // Triggers when user is back in range
             else if (distance <= maxDistance && isShowingSadness)
             {
-                // Removed direct emotion call: SetEmotion("neutral")
                 isShowingSadness = false;
             }
         }
@@ -145,6 +152,12 @@ public class SceneController : MonoBehaviour
             Debug.Log("Cannot play sound during wake-up sequence");
             return;
         }
+
+        // If asleep, only allow sleep-related sounds
+        if (emotionModel.IsAsleep && emotion != "sleep")
+        {
+            return;
+        }
         
         if (audioController != null)
         {
@@ -156,9 +169,9 @@ public class SceneController : MonoBehaviour
     */ 
     public void ShowColouredLight(string emotion)
     {
-        if (isWakingUp)
+        if (isWakingUp || emotionModel.IsAsleep)
         {
-            Debug.Log("Cannot show light during wake-up sequence");
+            Debug.Log("Cannot show light during wake-up sequence or while asleep");
             return;
         }
 
@@ -243,7 +256,7 @@ public class SceneController : MonoBehaviour
         // Show sleep thought bubble
         if (thoughtBubble != null)
         {
-            thoughtBubble.ShowThought("sleep");
+            thoughtBubble.ShowThought("sun");
             yield return new WaitForSeconds(4f);  // Show sleep thought for a moment
         }
 

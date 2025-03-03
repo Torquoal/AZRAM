@@ -2,6 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.Linq;
 
 public class EmotionModel : MonoBehaviour
 {
@@ -19,6 +20,12 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] private string currentTemperament;
     [SerializeField] private string currentMood;
     
+    [Header("Debug Settings")]
+    [SerializeField] private bool showDebugText = true;
+    [SerializeField] private bool useAcceleratedTesting = false;
+    [SerializeField] private bool usePersistentEmotions = true;  // Toggle for persistent emotions
+    [SerializeField] private float testingMultiplier = 180f; // Speed up time for testing
+
     // Struct to hold the emotional response values
     private struct EmotionalResponseValues
     {
@@ -66,9 +73,6 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] [Range(0, 100)] private float hungerNeeded = 30f;
 
     [Header("Decay Settings")]
-    [SerializeField] private bool useAcceleratedTesting = false;
-    [SerializeField] private float testingMultiplier = 180f; // Speed up time for testing
-
     private float gaugeLogTimer = 0f;
     private const float GAUGE_LOG_INTERVAL = 5f;
 
@@ -88,35 +92,52 @@ public class EmotionModel : MonoBehaviour
     private const string LONG_TERM_VALENCE_KEY = "LongTermValence";
     private const string LONG_TERM_AROUSAL_KEY = "LongTermArousal";
 
+    [Header("Sleep Settings")]
+    [SerializeField] private float maxSleepDuration = 4f * 60f * 60f; // 4 hours in seconds
+    [SerializeField] private float restRegenerationRate = 100f / (4f * 60f * 60f); // 100 points / 4 hours
+    [SerializeField] private SceneController sceneController;
+    private bool isAsleep = false;
+    private float sleepStartTime = 0f;
+    public bool IsAsleep => isAsleep;
+
+    [Header("References")]
+    [SerializeField] private EmotionController emotionController;
+
     //test Functions
     [ContextMenu("Test Emotional Model - StrokeFrontToBack")]
     private void TestStrokeFrontToBack()
     {
         string triggeredEvent = "StrokeFrontToBack";
-        string displayString = CalculateEmotionalResponse(triggeredEvent);
-        Debug.Log("Test Emotional Model - StrokeFrontToBack: " + displayString);
+        EmotionalResponseResult response = CalculateEmotionalResponse(triggeredEvent);
+        Debug.Log($"Test Emotional Model - StrokeFrontToBack: {response.EmotionToDisplay} (Trigger: {response.TriggerEvent})");
     }
 
     [ContextMenu("Test Emotional Model - Touch Fulfilled")]
     private void TestTouchFulfilled()
     {
         string triggeredEvent = "TouchFulfilled";
-        string displayString = CalculateEmotionalResponse(triggeredEvent);
-        Debug.Log("Test Emotional Model - Touch Fulfilled: " + displayString);
+        EmotionalResponseResult response = CalculateEmotionalResponse(triggeredEvent);
+        Debug.Log($"Test Emotional Model - Touch Fulfilled: {response.EmotionToDisplay} (Trigger: {response.TriggerEvent})");
     }
 
 
 
     private void Awake()
     {
-        // Load long term values from persistent storage
-        if (PlayerPrefs.HasKey(LONG_TERM_VALENCE_KEY))
+        // Load long term values based on persistence setting
+        if (usePersistentEmotions && PlayerPrefs.HasKey(LONG_TERM_VALENCE_KEY))
         {
             longTermValence = PlayerPrefs.GetFloat(LONG_TERM_VALENCE_KEY);
+            if (PlayerPrefs.HasKey(LONG_TERM_AROUSAL_KEY))
+            {
+                longTermArousal = PlayerPrefs.GetFloat(LONG_TERM_AROUSAL_KEY);
+            }
+            Debug.Log($"Loaded persistent emotions - Valence: {longTermValence}, Arousal: {longTermArousal}");
         }
-        if (PlayerPrefs.HasKey(LONG_TERM_AROUSAL_KEY))
+        else
         {
-            longTermArousal = PlayerPrefs.GetFloat(LONG_TERM_AROUSAL_KEY);
+            // Use inspector values
+            Debug.Log($"Using inspector values - Valence: {longTermValence}, Arousal: {longTermArousal}");
         }
 
         InitializeResponseTable();
@@ -127,6 +148,10 @@ public class EmotionModel : MonoBehaviour
         moodValence = longTermValence + UnityEngine.Random.Range(-5f, 5f);
         moodArousal = longTermArousal + UnityEngine.Random.Range(-5f, 5f);
 
+        // Clamp mood values
+        moodValence = Mathf.Clamp(moodValence, -10f, 10f);
+        moodArousal = Mathf.Clamp(moodArousal, -10f, 10f);
+
         currentMood = classifyEmotionalState(moodValence, moodArousal);
         Debug.Log($"Current mood on wakeup: {currentMood}");
 
@@ -135,7 +160,6 @@ public class EmotionModel : MonoBehaviour
         // save the mood values from the start of the session to calculate delta later
         moodValenceOnWakeup = moodValence;
         arousalArousalOnWakup = moodArousal;
-
     }
 
     private void Start()
@@ -150,6 +174,13 @@ public class EmotionModel : MonoBehaviour
 
     private void Update()
     {
+        // Handle sleep state first
+        if (isAsleep)
+        {
+            HandleSleepState();
+            return; // Skip normal update if sleeping
+        }
+
         float timeMultiplier = useAcceleratedTesting ? testingMultiplier : 1f;
         float deltaTime = Time.deltaTime * timeMultiplier;
 
@@ -177,6 +208,10 @@ public class EmotionModel : MonoBehaviour
         {
             float decayAmount = restDecayAccumulator;
             restGauge = Mathf.Max(0f, restGauge - decayAmount);
+            if (restGauge <= 0f && !isAsleep)
+            {
+                StartSleep();
+            }
             restDecayAccumulator = 0f;
         }
 
@@ -194,6 +229,7 @@ public class EmotionModel : MonoBehaviour
             hungerDecayAccumulator = 0f;
         }
 
+        
         // Check for threshold crossings
         CheckNeedThreshold("Touch", touchGauge, prevTouch, touchNeeded, touchFulfilled);
         CheckNeedThreshold("Rest", restGauge, prevRest, restNeeded, restFulfilled);
@@ -204,7 +240,7 @@ public class EmotionModel : MonoBehaviour
         gaugeLogTimer += Time.deltaTime;
         if (gaugeLogTimer >= GAUGE_LOG_INTERVAL)
         {
-            LogGaugeValues();
+            //LogGaugeValues();
             // Also log accumulators for debugging
             //Debug.Log($"Decay Accumulators:\n" +
             //         $"Touch: {touchDecayAccumulator:F3}\n" +
@@ -215,6 +251,43 @@ public class EmotionModel : MonoBehaviour
         }
     }
 
+    private void HandleSleepState()
+    {
+        float timeMultiplier = useAcceleratedTesting ? testingMultiplier : 1f;
+        float deltaTime = Time.deltaTime * timeMultiplier;
+
+        // Accumulate rest regeneration
+        float regenerationAmount = restRegenerationRate * deltaTime;
+        restGauge = Mathf.Min(100f, restGauge + regenerationAmount);
+
+        // Check if we should wake up
+        float timeAsleep = Time.time - sleepStartTime;
+        if (restGauge >= 100f || timeAsleep >= maxSleepDuration)
+        {
+            WakeUp();
+        }
+    }
+
+    private void StartSleep()
+    {
+        isAsleep = true;
+        sleepStartTime = Time.time;
+        Debug.Log("Robot has fallen asleep");
+    }
+
+    public void WakeUp()
+    {
+        isAsleep = false;
+        float sleepDuration = Time.time - sleepStartTime;
+        Debug.Log($"Robot waking up after {sleepDuration / 60f:F1} minutes of sleep");
+
+        // Only hide the thought bubble if waking up naturally (not from loud noise or other events)
+        if (restGauge >= 100f || sleepDuration >= maxSleepDuration)
+        {
+            sceneController.HideThought();
+        }
+    }
+
     private void LogGaugeValues()
     {
         string gaugeStatus = "Current Gauge Values:\n" +
@@ -222,43 +295,73 @@ public class EmotionModel : MonoBehaviour
             $"Rest:   {restGauge,3}/100 (Need: {restNeeded}, Fulfilled: {restFulfilled})\n" +
             $"Social: {socialGauge,3}/100 (Need: {socialNeeded}, Fulfilled: {socialFulfilled})\n" +
             $"Hunger: {hungerGauge,3}/100 (Need: {hungerNeeded}, Fulfilled: {hungerFulfilled})";
-        //Debug.Log(gaugeStatus);
+        Debug.Log(gaugeStatus);
     }
 
     private void CheckNeedThreshold(string needName, float currentValue, float previousValue, float neededThreshold, float fulfilledThreshold)
     {
-        string triggeredEvent = null;
+        
+        string triggeredEvent = "";
 
-        // Check if crossed below Needed threshold
-        if (previousValue >= neededThreshold && currentValue < neededThreshold)
+        // Check if need has fallen below the needed threshold
+        if (currentValue <= neededThreshold && previousValue > neededThreshold)
         {
-            Debug.Log($"{needName} need is now below threshold! Value: {currentValue} < {neededThreshold}");
             triggeredEvent = $"{needName}Needed";
+            if (showDebugText)
+                Debug.Log($"{needName} has fallen below needed threshold ({neededThreshold})");
         }
-        // Check if crossed above Fulfilled threshold
-        else if (previousValue <= fulfilledThreshold && currentValue > fulfilledThreshold)
+        // Check if need has risen above the fulfilled threshold
+        else if (currentValue >= fulfilledThreshold && previousValue < fulfilledThreshold)
         {
-            Debug.Log($"{needName} need is now fulfilled! Value: {currentValue} > {fulfilledThreshold}");
             triggeredEvent = $"{needName}Fulfilled";
+            if (showDebugText)
+                Debug.Log($"{needName} has risen above fulfilled threshold ({fulfilledThreshold})");
         }
 
-        // If a threshold was crossed, look up the response in the table
-        if (triggeredEvent != null && responseTable.ContainsKey(triggeredEvent))
+        // If an event was triggered, calculate and display emotional response
+        if (!string.IsNullOrEmpty(triggeredEvent))
         {
-            //TODO need some logic here that checks for 'special events' e.g., if Rest <10 a special
-            //sleeping display is triggered and the normal table is bypassed. SceneController will 
-            //do something similar for user-initiated special events, such as saying Qoobo's name.
-            //Only if the triggeredEvent is not a special event will the normal table be used.
-            string displayString = CalculateEmotionalResponse(triggeredEvent);
-            Debug.Log($"Emotional Response for {needName} ({triggeredEvent}) is {displayString}");
-            // TODO: Call Whatever SceneController Function Will Use displayString to actuate displays
+            EmotionalResponseResult result = CalculateEmotionalResponse(triggeredEvent);
+            if (showDebugText)
+                Debug.Log($"Triggered {triggeredEvent} - Emotional Response: {result.EmotionToDisplay}");
+            emotionController.DisplayEmotionInternal(result.EmotionToDisplay, triggeredEvent);
         }
     }
 
-    // Method to calculate the emotional response the robot will eventually display
-    public string CalculateEmotionalResponse(string triggeredEvent)
+    public struct EmotionalResponseResult
     {
+        public string EmotionToDisplay;
+        public string TriggerEvent;
+
+        public EmotionalResponseResult(string emotion, string trigger)
+        {
+            EmotionToDisplay = emotion;
+            TriggerEvent = trigger;
+        }
+    }
+
+    // Modify the return type of CalculateEmotionalResponse
+    public EmotionalResponseResult CalculateEmotionalResponse(string triggeredEvent)
+    {
+        // Special handling for loud noise
+        if (triggeredEvent.ToLower() == "loudnoise")
+        {
+            // If we're asleep, wake up
+            if (isAsleep)
+            {
+                WakeUp();
+            }
+            return new EmotionalResponseResult("loudnoise", triggeredEvent);
+        }
+
+        // If asleep, only respond to special events (like loudnoise above)
+        if (isAsleep)
+        {
+            return new EmotionalResponseResult("sleep", triggeredEvent);
+        }
+
         currentMood = classifyEmotionalState(moodValence, moodArousal);
+        Debug.Log("Emotion Model: currentMood: " + currentMood);
         
         // Debug logging
         Debug.Log($"Calculating response for event '{triggeredEvent}' in mood '{currentMood}'");
@@ -267,13 +370,13 @@ public class EmotionModel : MonoBehaviour
         if (!responseTable.ContainsKey(triggeredEvent))
         {
             Debug.LogError($"No responses found for event: {triggeredEvent}");
-            return "Neutral";
+            return new EmotionalResponseResult("neutral", triggeredEvent);
         }
         
         if (!responseTable[triggeredEvent].ContainsKey(currentMood))
         {
             Debug.LogError($"No response found for mood: {currentMood} in event: {triggeredEvent}");
-            return "Neutral";
+            return new EmotionalResponseResult("neutral", triggeredEvent);
         }
 
         EmotionalResponseValues response = responseTable[triggeredEvent][currentMood];
@@ -281,7 +384,7 @@ public class EmotionModel : MonoBehaviour
 
         string displayString = emotionalDisplayTable(response);
 
-        return displayString;
+        return new EmotionalResponseResult(displayString, triggeredEvent);
     }
 
 
@@ -306,36 +409,73 @@ public class EmotionModel : MonoBehaviour
    robot's long term valence and arousal, allowing for slow mood change and long-term evolution.
     */
 
+    // Array of special events that bypass normal emotion classification
+    private readonly string[] specialEvents = new string[]
+    {
+        "HungerNeeded",
+        "RestNeeded",
+        "TouchNeeded",
+        "SocialNeeded",
+        "HungerFulfilled",
+        "RestFulfilled",
+        "TouchFulfilled",
+        "SocialFulfilled",
+    };
+
     private string classifyEmotionalState(float valence, float arousal)
     {
-        string classifiedEmotion = "unclassified";
-        if (valence > 3){
-            if (arousal > 3){
-                classifiedEmotion = "Excited";
-            } else if (arousal < 3 && arousal > -3){
-                classifiedEmotion = "Happy";
-            } else if (arousal < -3){
-                classifiedEmotion = "Relaxed";
-            }
-        } else if (valence < 3 && valence > -3){
-            if (arousal > 3){
-                classifiedEmotion = "Energetic";
-            } else if (arousal < 3 && arousal > -3){
-                classifiedEmotion = "Neutral";
-            } else if (arousal < -3){
-                classifiedEmotion = "Lethargic";
-            }
-        } else if (valence < -3){
-            if (arousal > 3){
-                classifiedEmotion = "Aggressive";
-            } else if (arousal < 3 && arousal > -3){
-                classifiedEmotion = "Sad";
-            } else if (arousal < -3){
-                classifiedEmotion = "Gloomy";
+
+        string classifiedEmotion = "Neutral";
+        
+        // Existing emotion classification logic...
+        //if (valence >= -10 && valence <= 10)
+        //{
+            // right hand column
+            if (valence > 3)
+            {
+                if (arousal > 3)
+                { 
+                    classifiedEmotion = "Excited";
+                } else if (arousal < 3 && arousal > -3){
+                    classifiedEmotion = "Happy";
+                } else if (arousal < -3){
+                    classifiedEmotion = "Relaxed";
+                }
+            } else if (valence < 3 && valence > -2){
+                if (arousal > 8){
+                    classifiedEmotion = "Surprised";
+                } else if (arousal < 8 && arousal > 5){
+                    classifiedEmotion = "Energetic";
+                } else if (arousal < 5 && arousal > -3){
+                    classifiedEmotion = "Neutral";
+                } else if (arousal < -3){
+                    classifiedEmotion = "Tired";
+                }
+            } else if (valence < -2)
+            {
+            // top left corner
+                if (arousal > 5){
+                    if (valence > -5){
+                        classifiedEmotion = "Tense";
+                    } else if (valence < -5){
+                        if (arousal > 8){
+                            classifiedEmotion = "Scared";
+                        } else if (arousal > 6){
+                            classifiedEmotion = "Angry";
+                        }
+                    }
+                } else if (arousal > -3){
+                    classifiedEmotion = "Miserable";
+                } else if (arousal < -3 && arousal > -7){
+                    classifiedEmotion = "Sad";
+                } else if (arousal < -7){
+                    classifiedEmotion = "Gloomy";
+                }
             }     
-        } else {
-            Debug.LogError("Long term valence is out of range");
-        }
+        //} else {
+            //Debug.LogError("Long term valence is out of range");
+        //}
+        
         return classifiedEmotion;
     }
 
@@ -395,36 +535,6 @@ public class EmotionModel : MonoBehaviour
         {
             Debug.LogError($"Error loading emotional responses from CSV: {e.Message}");
             // Initialize with default values as fallback
-            InitializeDefaultResponses();
-        }
-    }
-
-    // Fallback method with default values if CSV loading fails
-    private void InitializeDefaultResponses()
-    {
-        Debug.Log("Initializing default emotional responses");
-        responseTable = new Dictionary<string, Dictionary<string, EmotionalResponseValues>>();
-        
-        // Add a basic set of default responses
-        string[] events = { "TouchNeeded", "RestNeeded", "SocialNeeded", "HungerNeeded", 
-                          "TouchFulfilled", "RestFulfilled", "SocialFulfilled", "HungerFulfilled",
-                          "StrokeFrontToBack", "StrokeBackToFront" };
-        string[] states = { "Happy", "Neutral", "Sad" };
-        
-        foreach (string eventType in events)
-        {
-            responseTable[eventType] = new Dictionary<string, EmotionalResponseValues>();
-            foreach (string state in states)
-            {
-                responseTable[eventType][state] = new EmotionalResponseValues
-                {
-                    Valence = 0f,
-                    Arousal = 0f,
-                    Touch = 0f,
-                    Rest = 0f,
-                    Social = 0f
-                };
-            }
         }
     }
 
@@ -449,12 +559,20 @@ public class EmotionModel : MonoBehaviour
         moodValence += fuzzedValence * 0.01f;
         moodArousal += fuzzedArousal * 0.01f;
 
+        // Clamp mood values
+        moodValence = Mathf.Clamp(moodValence, -10f, 10f);
+        moodArousal = Mathf.Clamp(moodArousal, -10f, 10f);
+
+        // Update current mood after changes
+        currentMood = classifyEmotionalState(moodValence, moodArousal);
+
         Debug.Log("Emotion Model: response.Valence: " + response.Valence + 
                 " fuzzed to " + fuzzedValence + 
                 "and 5%" + fuzzedValence*0.01f + "added to mood valence");
         Debug.Log("Emotion Model: response.Arousal: " + response.Arousal + 
                   " fuzzed to " + fuzzedArousal + 
                   "and 5%" + fuzzedArousal*0.01f + "added to mood arousal");
+        Debug.Log("Emotion Model: Updated current mood to: " + currentMood);
 
 
 
@@ -469,11 +587,11 @@ public class EmotionModel : MonoBehaviour
             } else if (fuzzedValence < 6 && fuzzedValence > 3){
                 displayString = "Excited";
             } else if (fuzzedValence < 3 && fuzzedValence > 3){
-                displayString = "Shocked";
+                displayString = "Surprised";
             } else if (fuzzedValence < -3 && fuzzedValence > -6){
-                displayString = "Annoyed";
+                displayString = "Tense";
             } else if (fuzzedValence < -6){
-                displayString = "Angry";
+                displayString = "Scared";
             }
         } else if (fuzzedArousal < 6 && fuzzedArousal > 3){
             if (fuzzedValence > 6){
@@ -481,7 +599,7 @@ public class EmotionModel : MonoBehaviour
             } else if (fuzzedValence < 6 && fuzzedValence > 3){
                 displayString = "Happy";
             } else if (fuzzedValence < 3 && fuzzedValence > 3){
-                displayString = "Alert";
+                displayString = "Energetic";
             } else if (fuzzedValence < -3 && fuzzedValence > -6){
                 displayString = "Annoyed";
             } else if (fuzzedValence < -6){
@@ -497,7 +615,7 @@ public class EmotionModel : MonoBehaviour
             } else if (fuzzedValence < -3 && fuzzedValence > -6){
                 displayString = "Sad";
             } else if (fuzzedValence < -6){
-                displayString = "Crying";
+                displayString = "Miserable";
             }
         } else if (fuzzedArousal < -3 && fuzzedArousal > -6){
             if (fuzzedValence > 6){
@@ -509,10 +627,20 @@ public class EmotionModel : MonoBehaviour
             } else if (fuzzedValence < -3 && fuzzedValence > -6){
                 displayString = "Sad";
             } else if (fuzzedValence < -6){
-                displayString = "Crying";
+                displayString = "Sad";
             }
         } else if (fuzzedArousal < -6){
-            displayString = "Sleepy";
+            if (fuzzedValence > 6){
+                displayString = "Happy Sleepy";
+            } else if (fuzzedValence < 6 && fuzzedValence > 3){
+                displayString = "Happy Sleepy";
+            } else if (fuzzedValence < 3 && fuzzedValence > 3){
+                displayString = "Sleepy";
+            } else if (fuzzedValence < -3 && fuzzedValence > -6){
+                displayString = "Sad Sleepy";
+            } else if (fuzzedValence < -6){
+                displayString = "Sad Sleepy";
+            }
         } else {
             Debug.LogError("Fuzzed Arousal is out of range");
         }
@@ -522,24 +650,31 @@ public class EmotionModel : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        // 1. Calculate mood changes from this session
-        float valenceDelta = moodValence - moodValenceOnWakeup;
-        float arousalDelta = moodArousal - arousalArousalOnWakup;
+        if (usePersistentEmotions)
+        {
+            // Calculate the change in mood from this session
+            float moodValenceDelta = moodValence - moodValenceOnWakeup;
+            float moodArousalDelta = moodArousal - arousalArousalOnWakup;
 
-        Debug.Log($"Session mood changes - Valence: {valenceDelta:F2}, Arousal: {arousalDelta:F2}");
+            // Apply a fraction of the mood change to the long term values
+            longTermValence += moodValenceDelta * 0.1f; // 10% of mood change affects long term
+            longTermArousal += moodArousalDelta * 0.1f;
 
-        // 2. Apply session changes to long term values
-        longTermValence = Mathf.Clamp(longTermValence + valenceDelta, -10f, 10f);
-        longTermArousal = Mathf.Clamp(longTermArousal + arousalDelta, -10f, 10f);
+            // Clamp values
+            longTermValence = Mathf.Clamp(longTermValence, -10f, 10f);
+            longTermArousal = Mathf.Clamp(longTermArousal, -10f, 10f);
 
-        Debug.Log($"Updated long term values - Valence: {longTermValence:F2}, Arousal: {longTermArousal:F2}");
+            // Save to persistent storage
+            PlayerPrefs.SetFloat(LONG_TERM_VALENCE_KEY, longTermValence);
+            PlayerPrefs.SetFloat(LONG_TERM_AROUSAL_KEY, longTermArousal);
+            PlayerPrefs.Save();
 
-        // 3. Save to persistent storage
-        PlayerPrefs.SetFloat(LONG_TERM_VALENCE_KEY, longTermValence);
-        PlayerPrefs.SetFloat(LONG_TERM_AROUSAL_KEY, longTermArousal);
-        PlayerPrefs.Save();
-
-        Debug.Log("Saved emotional values to persistent storage");
+            Debug.Log($"Saved long term values - Valence: {longTermValence}, Arousal: {longTermArousal}");
+        }
+        else
+        {
+            Debug.Log("Persistent emotions disabled - not saving long term values");
+        }
     }
 
     // Method to reset long-term values if needed (for testing)
