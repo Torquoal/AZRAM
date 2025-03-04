@@ -136,11 +136,11 @@ public class EmotionController : MonoBehaviour
                 sceneController.SetFaceExpression("neutral");
                 break;
 
-            case "lethargic":
+            case "tired":
                 sceneController.SetFaceExpression("sad");
                 break;
 
-            case "angry":
+            case "annoyed":
                 sceneController.SetFaceExpression("angry");
                 break;
 
@@ -245,9 +245,10 @@ public class EmotionController : MonoBehaviour
                 break;
 
             case "relaxed":
-                sceneController.ShowThought("happy");
+                sceneController.ShowThought("sleep");
                 sceneController.SetFaceExpression("happy");
                 sceneController.TailsEmotion("happy");
+                sceneController.PlaySound("happy");
                 break;
 
             case "surprised":
@@ -320,28 +321,12 @@ public class EmotionController : MonoBehaviour
                 break;
 
             case "gloomy":
-                sceneController.ShowThought("tired");
+                sceneController.ShowThought("sleep");
                 sceneController.SetFaceExpression("neutral");
                 sceneController.TailsEmotion("sad");
                 sceneController.PlaySound("sad");
                 break;
-
-            case "happy sleepy":
-                sceneController.ShowThought("sleep");
-                sceneController.PlaySound("beep");
-                sceneController.SetFaceExpression("happy");
-                break;
-            
-            case "sleepy":
-                sceneController.ShowThought("sleep");
-                sceneController.PlaySound("sad");
-                break;
-
-            case "sadsleepy":
-                sceneController.ShowThought("sleep");
-                sceneController.PlaySound("sad");
-                sceneController.SetFaceExpression("sad");
-                break;
+                  
 
             default:
                 Debug.LogWarning($"Unknown display string: {displayString}, defaulting to neutral");

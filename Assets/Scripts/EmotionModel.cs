@@ -300,31 +300,28 @@ public class EmotionModel : MonoBehaviour
 
     private void CheckNeedThreshold(string needName, float currentValue, float previousValue, float neededThreshold, float fulfilledThreshold)
     {
-        
-        string triggeredEvent = "";
+        // Check if value has fallen to zero
+        if (currentValue <= 0 && previousValue > 0)
+        {
+            string unfulfilledEvent = needName + "Unfulfilled";
+            EmotionalResponseResult result = CalculateEmotionalResponse(unfulfilledEvent);
+            emotionController.DisplayEmotionInternal(result.EmotionToDisplay, result.TriggerEvent);
+            return; // Return early as this is the most severe state
+        }
 
-        // Check if need has fallen below the needed threshold
+        // Check if value has fallen below the needed threshold
         if (currentValue <= neededThreshold && previousValue > neededThreshold)
         {
-            triggeredEvent = $"{needName}Needed";
-            if (showDebugText)
-                Debug.Log($"{needName} has fallen below needed threshold ({neededThreshold})");
+            string neededEvent = needName + "Needed";
+            EmotionalResponseResult result = CalculateEmotionalResponse(neededEvent);
+            emotionController.DisplayEmotionInternal(result.EmotionToDisplay, result.TriggerEvent);
         }
-        // Check if need has risen above the fulfilled threshold
+        // Check if value has risen above the fulfilled threshold
         else if (currentValue >= fulfilledThreshold && previousValue < fulfilledThreshold)
         {
-            triggeredEvent = $"{needName}Fulfilled";
-            if (showDebugText)
-                Debug.Log($"{needName} has risen above fulfilled threshold ({fulfilledThreshold})");
-        }
-
-        // If an event was triggered, calculate and display emotional response
-        if (!string.IsNullOrEmpty(triggeredEvent))
-        {
-            EmotionalResponseResult result = CalculateEmotionalResponse(triggeredEvent);
-            if (showDebugText)
-                Debug.Log($"Triggered {triggeredEvent} - Emotional Response: {result.EmotionToDisplay}");
-            emotionController.DisplayEmotionInternal(result.EmotionToDisplay, triggeredEvent);
+            string fulfilledEvent = needName + "Fulfilled";
+            EmotionalResponseResult result = CalculateEmotionalResponse(fulfilledEvent);
+            emotionController.DisplayEmotionInternal(result.EmotionToDisplay, result.TriggerEvent);
         }
     }
 
@@ -441,34 +438,23 @@ public class EmotionModel : MonoBehaviour
                 } else if (arousal < -3){
                     classifiedEmotion = "Relaxed";
                 }
-            } else if (valence < 3 && valence > -2){
-                if (arousal > 8){
-                    classifiedEmotion = "Surprised";
-                } else if (arousal < 8 && arousal > 5){
+            } else if (valence < 3 && valence > -3){
+                if (arousal > 3)
+                { 
                     classifiedEmotion = "Energetic";
-                } else if (arousal < 5 && arousal > -3){
+                } else if (arousal < 3 && arousal > -3){
                     classifiedEmotion = "Neutral";
                 } else if (arousal < -3){
                     classifiedEmotion = "Tired";
                 }
-            } else if (valence < -2)
+            } else if (valence < -3)
             {
-            // top left corner
-                if (arousal > 5){
-                    if (valence > -5){
-                        classifiedEmotion = "Tense";
-                    } else if (valence < -5){
-                        if (arousal > 8){
-                            classifiedEmotion = "Scared";
-                        } else if (arousal > 6){
-                            classifiedEmotion = "Angry";
-                        }
-                    }
-                } else if (arousal > -3){
-                    classifiedEmotion = "Miserable";
-                } else if (arousal < -3 && arousal > -7){
+                if (arousal > 3)
+                { 
+                    classifiedEmotion = "Annoyed";
+                } else if (arousal < 3 && arousal > -3){
                     classifiedEmotion = "Sad";
-                } else if (arousal < -7){
+                } else if (arousal < -3){
                     classifiedEmotion = "Gloomy";
                 }
             }     
@@ -631,15 +617,15 @@ public class EmotionModel : MonoBehaviour
             }
         } else if (fuzzedArousal < -6){
             if (fuzzedValence > 6){
-                displayString = "Happy Sleepy";
+                displayString = "Relaxed";
             } else if (fuzzedValence < 6 && fuzzedValence > 3){
-                displayString = "Happy Sleepy";
+                displayString = "Relaxed";
             } else if (fuzzedValence < 3 && fuzzedValence > 3){
-                displayString = "Sleepy";
+                displayString = "Tired";
             } else if (fuzzedValence < -3 && fuzzedValence > -6){
-                displayString = "Sad Sleepy";
+                displayString = "Gloomy";
             } else if (fuzzedValence < -6){
-                displayString = "Sad Sleepy";
+                displayString = "Gloomy";
             }
         } else {
             Debug.LogError("Fuzzed Arousal is out of range");
