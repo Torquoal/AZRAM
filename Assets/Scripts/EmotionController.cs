@@ -180,7 +180,7 @@ public class EmotionController : MonoBehaviour
                 sceneController.ShowThought("sleep");
                 break;
             case "touchneeded":
-                // Add any specific overrides for touch needed
+                sceneController.ShowThought("hand");
                 break;
             case "hungerfulfilled":
                 sceneController.ShowThought("heart");
@@ -189,10 +189,19 @@ public class EmotionController : MonoBehaviour
                 sceneController.ShowThought("heart");
                 break;
             case "touchfulfilled":
-                sceneController.ShowThought("heart");
+                sceneController.ShowThought("hand");
                 break;
             case "restfulfilled":
-                // Add any specific overrides for rest fulfilled
+                sceneController.ShowThought("sun");
+                break;
+            case "hungerunfulfilled":
+                sceneController.ShowThought("hungry");
+                break;
+            case "socialunfulfilled":
+                sceneController.ShowThought("sad");
+                break;
+            case "touchunfulfilled":
+                sceneController.ShowThought("hand");
                 break;
             case "loudnoise":
                 sceneController.PlaySound("surprised");

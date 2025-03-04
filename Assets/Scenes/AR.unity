@@ -9556,7 +9556,7 @@ MonoBehaviour:
   sceneController: {fileID: 799751467}
   emotionModel: {fileID: 799751474}
   emotionText: {fileID: 996060955}
-  voiceDetector: {fileID: 0}
+  voiceDetector: {fileID: 1629618762}
   showDebugText: 1
   emotionFormat: 'Emotion: {0}'
   displayDuration: 10
@@ -9613,20 +9613,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b2c9eca53792884b81c596ac2c0d1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  longTermValence: 10
-  longTermArousal: 6
-  moodValence: 0
-  moodArousal: 0
+  longTermValence: 6
+  longTermArousal: 6.3
+  moodValence: 2
+  moodArousal: 2.2
   currentTemperament: 
   currentMood: 
   showDebugText: 1
   useAcceleratedTesting: 1
   usePersistentEmotions: 0
   testingMultiplier: 250
-  touchGauge: 50
-  restGauge: 50
-  socialGauge: 50
-  hungerGauge: 50
+  touchGauge: 49.2
+  restGauge: 89.2
+  socialGauge: 90
+  hungerGauge: 91.1
   touchFulfilled: 70
   touchNeeded: 30
   restFulfilled: 70
@@ -21681,6 +21681,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 630819a6bc6845b46a0a56af38f7930f, type: 3}
   - {fileID: 21300000, guid: cb8330951934a0d4fa2b9f8cae70ece1, type: 3}
   - {fileID: 21300000, guid: 50f1619915c856443b6970d09df0db61, type: 3}
+  - {fileID: 21300000, guid: 09162ae6c241f5a4dbdd80950cc9b3c0, type: 3}
 --- !u!1 &1698324083
 GameObject:
   m_ObjectHideFlags: 0
