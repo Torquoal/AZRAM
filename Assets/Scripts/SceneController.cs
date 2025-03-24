@@ -68,22 +68,22 @@ public class SceneController : MonoBehaviour
             case StrokeDetector.StrokeDirection.FrontToBack:
                 Debug.Log("Stroke detected: FrontToBack");
                 var response = emotionModel.CalculateEmotionalResponse("StrokeFrontToBack");
-                emotionController.TryDisplayEmotion(response.EmotionToDisplay);
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
             case StrokeDetector.StrokeDirection.BackToFront:
                 Debug.Log("Stroke detected: BackToFront");
                 response = emotionModel.CalculateEmotionalResponse("StrokeBackToFront");
-                emotionController.TryDisplayEmotion(response.EmotionToDisplay);
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
-            case StrokeDetector.StrokeDirection.HoldLeft:
-                Debug.Log("Stroke detected: HoldLeft");
-                break;
-            case StrokeDetector.StrokeDirection.HoldRight:
-                Debug.Log("Stroke detected: HoldRight");
-                break;
-            case StrokeDetector.StrokeDirection.HoldTop:
-                Debug.Log("Stroke detected: HoldTop");  
-                break;
+            //case StrokeDetector.StrokeDirection.HoldLeft:
+            //    Debug.Log("Stroke detected: HoldLeft");
+            //    break;
+            //case StrokeDetector.StrokeDirection.HoldRight:
+            //    Debug.Log("Stroke detected: HoldRight");
+            //    break;
+            //case StrokeDetector.StrokeDirection.HoldTop:
+            //    Debug.Log("Stroke detected: HoldTop");  
+            //    break;
             default:
                 Debug.Log($"Unhandled stroke direction: {direction}");
                 break;
@@ -110,7 +110,7 @@ public class SceneController : MonoBehaviour
             if (distance > maxDistance && !isShowingSadness && !isWakingUp)
             {
                 var response = emotionModel.CalculateEmotionalResponse("TooFarAway");
-                emotionController.TryDisplayEmotion(response.EmotionToDisplay);
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 isShowingSadness = true;
             }
             // Triggers when user is back in range

@@ -13,11 +13,16 @@ public class UserFacingTracker : MonoBehaviour
     [SerializeField] private float debugRayLength = 2f;
     [SerializeField] private Color debugRayColor = Color.yellow;
 
+    [Header("Eye Contact Settings")]
+    [SerializeField] private float requiredLookDuration = 5f;
+    [SerializeField] private float angleThreshold = 10f;
+
     [SerializeField] private SceneController sceneController;
 
-    bool hasShown = false;
-    float angleToQoobo;
-
+    private bool hasShown = false;
+    private float angleToQoobo;
+    private float sustainedLookTimer = 0f;
+    private bool isLookingAtRobot = false;
 
     private void Start()
     {
@@ -40,16 +45,36 @@ public class UserFacingTracker : MonoBehaviour
         // Calculate the angle between the two directions
         angleToQoobo = Vector3.Angle(headDirection, directionToQoobo);
 
-        if ((angleToQoobo < 15f) && (sceneController.wakeUpComplete) && (!hasShown))
+        // Check if looking at robot within threshold
+        bool currentlyLooking = angleToQoobo < angleThreshold;
+
+        if (currentlyLooking && !isLookingAtRobot)
         {
-            // add triggeredEvent
-            hasShown = true;
+            // Just started looking at robot
+            isLookingAtRobot = true;
+            sustainedLookTimer = 0f;
+        }
+        else if (!currentlyLooking && isLookingAtRobot)
+        {
+            // Stopped looking at robot
+            isLookingAtRobot = false;
+            sustainedLookTimer = 0f;
+        }
+        else if (currentlyLooking && isLookingAtRobot)
+        {
+            // Continue timing the look duration
+            sustainedLookTimer += Time.deltaTime;
+
+            // Check if we've reached the required duration
+            if (sustainedLookTimer >= requiredLookDuration && sceneController.wakeUpComplete && !hasShown)
+            {
+                sceneController.ShowThought("looking");
+                hasShown = true;
+            }
         }
 
-
         // Update the debug text
-        angleDebugText.text = $"Facing Angle: {angleToQoobo:F1}°";
-
+        angleDebugText.text = $"Facing Angle: {angleToQoobo:F1}°\nLook Timer: {sustainedLookTimer:F1}s";
 
         // Draw debug ray if enabled
         if (showDebugRay)

@@ -272,20 +272,19 @@ public class EmotionModel : MonoBehaviour
     {
         isAsleep = true;
         sleepStartTime = Time.time;
-        Debug.Log("Robot has fallen asleep");
+        // Trigger sleep display when actually falling asleep
+        var response = CalculateEmotionalResponse("RestNeeded");
+        emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
     }
 
     public void WakeUp()
     {
+        if (!isAsleep) return;
+        
         isAsleep = false;
-        float sleepDuration = Time.time - sleepStartTime;
-        Debug.Log($"Robot waking up after {sleepDuration / 60f:F1} minutes of sleep");
-
-        // Only hide the thought bubble if waking up naturally (not from loud noise or other events)
-        if (restGauge >= 100f || sleepDuration >= maxSleepDuration)
-        {
-            sceneController.HideThought();
-        }
+        // Clear sleep display when waking up
+        emotionController.TryDisplayEmotion("neutral", "", true);
+        Debug.Log("Robot has woken up naturally");
     }
 
     private void LogGaugeValues()
@@ -318,7 +317,7 @@ public class EmotionModel : MonoBehaviour
         }
         // Check if value has risen above the fulfilled threshold
         else if (currentValue >= fulfilledThreshold && previousValue < fulfilledThreshold)
-        {
+        { // currently broken I think
             string fulfilledEvent = needName + "Fulfilled";
             EmotionalResponseResult result = CalculateEmotionalResponse(fulfilledEvent);
             emotionController.DisplayEmotionInternal(result.EmotionToDisplay, result.TriggerEvent);

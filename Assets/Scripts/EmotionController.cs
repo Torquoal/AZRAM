@@ -85,19 +85,8 @@ public class EmotionController : MonoBehaviour
 
     private void Update()
     {
-        // Check if robot is asleep
-        if (emotionModel.IsAsleep)
-        {
-            // If we weren't already showing sleep state, show it
-            if (currentDisplayString != "sleep")
-            {
-                DisplaySleepState();
-            }
-            return;
-        }
-
-        // Only update passive expression if not showing an emotional display
-        if (!isShowingEmotionalDisplay && Time.time - lastPassiveUpdateTime >= passiveUpdateInterval)
+        // Only update passive expression if not showing an emotional display and not asleep
+        if (!isShowingEmotionalDisplay && !emotionModel.IsAsleep && Time.time - lastPassiveUpdateTime >= passiveUpdateInterval)
         {
             UpdatePassiveExpression();
             lastPassiveUpdateTime = Time.time;
@@ -152,10 +141,7 @@ public class EmotionController : MonoBehaviour
                 sceneController.SetFaceExpression("sad");
                 break;
 
-            case "sleep":
-                sceneController.SetFaceExpression("sleepy");
-                sceneController.ShowThought("sleep");
-                break;
+            
 
             default:
                 sceneController.SetFaceExpression("neutral");
@@ -163,24 +149,44 @@ public class EmotionController : MonoBehaviour
         }
     }
 
+    private void DisplaySleepState()
+    {
+        if (showDebugText)
+            Debug.Log("Displaying sleep state");
+
+        // Stop any existing auto-reset coroutine
+        if (resetCoroutine != null)
+        {
+            StopCoroutine(resetCoroutine);
+            resetCoroutine = null;
+        }
+
+        currentDisplayString = "sleep";
+        sceneController.SetFaceExpression("sleepy");
+        sceneController.ShowThought("sleep");
+        sceneController.HideLightSphere();
+    }
+
     private void ApplySpecialDisplayOverrides(string triggerEvent)
     {
-        // Add specific overrides for special events
+        if (showDebugText)
+            Debug.Log($"Checking special display overrides for: {triggerEvent}");
 
-        Debug.Log($"Emotion Controller:Applying special display overrides for trigger event: {triggerEvent}");
+        // Handle special display overrides
         switch (triggerEvent.ToLower())
         {
             case "hungerneeded":
                 sceneController.ShowThought("hungry");
                 break;
             case "socialneeded":
+                sceneController.ShowThought("social");
                 sceneController.ShowColouredLight("sad");
-                break;
-            case "restneeded":
-                sceneController.ShowThought("sleep");
                 break;
             case "touchneeded":
                 sceneController.ShowThought("hand");
+                break;
+            case "restneeded":
+                sceneController.ShowThought("sleep");
                 break;
             case "hungerfulfilled":
                 sceneController.ShowThought("heart");
@@ -203,6 +209,15 @@ public class EmotionController : MonoBehaviour
             case "touchunfulfilled":
                 sceneController.ShowThought("hand");
                 break;
+            case "foodheard":
+                sceneController.ShowThought("hungry");
+                break;
+            case "greetingheard":
+                sceneController.ShowThought("heart");
+                break;
+            case "nameheard":
+                sceneController.ShowThought("exclamation");
+                break;                
             case "loudnoise":
                 sceneController.PlaySound("surprised");
                 sceneController.ShowThought("exclamation");
@@ -210,9 +225,22 @@ public class EmotionController : MonoBehaviour
                 sceneController.TailsEmotion("surprised");
                 break;
         }
+
+        // Only start auto-reset if not asleep
+        if (!emotionModel.IsAsleep && resetCoroutine == null)
+        {
+            resetCoroutine = StartCoroutine(AutoResetThoughtBubble());
+        }
     }
 
-    public void DisplayEmotion(string displayString, string triggerEvent = "")
+    private IEnumerator AutoResetThoughtBubble()
+    {
+        yield return new WaitForSeconds(10f); // Wait for 10 seconds
+        sceneController.HideThought();
+        resetCoroutine = null;
+    }
+
+    public void DisplayEmotion(string displayString, string triggerEvent)
     {
         if (!hasInitialized || !sceneController.IsWakeUpComplete())
         {
@@ -226,16 +254,25 @@ public class EmotionController : MonoBehaviour
         currentDisplayString = displayString;
         currentTriggerEvent = triggerEvent;
         
-        // Cancel any pending reset
-        if (resetCoroutine != null)
+        // Cancel any pending reset if we're going to sleep
+        if (displayString.ToLower() == "sleep" || emotionModel.IsAsleep)
         {
-            StopCoroutine(resetCoroutine);
-            resetCoroutine = null;
+            if (resetCoroutine != null)
+            {
+                StopCoroutine(resetCoroutine);
+                resetCoroutine = null;
+            }
         }
 
-        // First, let the normal emotion system process the display
+        // Handle the emotion display
         switch (displayString.ToLower())
         {
+            case "sleep":
+                //sceneController.SetFaceExpression("sleepy");
+                sceneController.ShowThought("sleep");
+                sceneController.HideLightSphere();
+                break;
+            
             // Regular emotional states
             case "excited":
                 sceneController.ShowColouredLight("happy");
@@ -246,7 +283,7 @@ public class EmotionController : MonoBehaviour
                 break;
 
             case "happy":
-                sceneController.ShowColouredLight("happy");
+                //sceneController.ShowColouredLight("happy");
                 sceneController.PlaySound("happy");
                 sceneController.ShowThought("happy");
                 sceneController.SetFaceExpression("happy");
@@ -335,7 +372,7 @@ public class EmotionController : MonoBehaviour
                 sceneController.TailsEmotion("sad");
                 sceneController.PlaySound("sad");
                 break;
-                  
+
 
             default:
                 Debug.LogWarning($"Unknown display string: {displayString}, defaulting to neutral");
@@ -352,15 +389,15 @@ public class EmotionController : MonoBehaviour
             ApplySpecialDisplayOverrides(triggerEvent);
         }
 
-        // Update display time and start auto-reset timer
+        // Update display time
         UpdateEmotionDisplay();
 
-        // Only start the auto-reset for non-neutral emotions
-        if (displayString.ToLower() != "neutral")
+        // Only start the auto-reset for non-sleep emotions and when not asleep
+        if (displayString.ToLower() != "neutral" && displayString.ToLower() != "sleep" && !emotionModel.IsAsleep)
         {
             resetCoroutine = StartCoroutine(AutoResetDisplay());
         }
-        else
+        else if (displayString.ToLower() == "neutral")
         {
             // For neutral, we clear the emotional display state immediately
             isShowingEmotionalDisplay = false;
@@ -396,7 +433,7 @@ public class EmotionController : MonoBehaviour
         sceneController.HideLightSphere();
         
         // Reset to neutral state through TryDisplayEmotion to respect cooldown
-        TryDisplayEmotion("neutral", true);  // Use bypassCooldown=true for neutral
+        TryDisplayEmotion("neutral", "", true);  // Use bypassCooldown=true for neutral
         Debug.Log("Auto-reset to neutral display state");
     }
 
@@ -405,18 +442,7 @@ public class EmotionController : MonoBehaviour
         return currentDisplayString;
     }
 
-    private void DisplaySleepState()
-    {
-        if (showDebugText)
-            Debug.Log("Displaying sleep state");
-
-        currentDisplayString = "sleep";
-        sceneController.SetFaceExpression("sleepy");
-        sceneController.ShowThought("sleep");
-        sceneController.HideLightSphere();
-    }
-
-    public bool TryDisplayEmotion(string displayString, bool bypassCooldown = false)
+    public bool TryDisplayEmotion(string displayString, string triggerEvent, bool bypassCooldown = false)
     {
         if (!hasInitialized || !sceneController.IsWakeUpComplete())
         {
@@ -443,7 +469,7 @@ public class EmotionController : MonoBehaviour
             return false;
         }
 
-        DisplayEmotionInternal(displayString);
+        DisplayEmotionInternal(displayString, triggerEvent);
         return true;
     }
 

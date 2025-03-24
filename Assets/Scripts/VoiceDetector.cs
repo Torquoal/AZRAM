@@ -5,6 +5,7 @@ using System.Collections.Generic;
 public class VoiceDetector : MonoBehaviour
 {
     [SerializeField] private EmotionController emotionController;
+    [SerializeField] private EmotionModel emotionModel;
     [SerializeField] private SceneController sceneController;
     [System.Serializable]
     public class WordGroup
@@ -23,7 +24,7 @@ public class VoiceDetector : MonoBehaviour
     [SerializeField] private List<WordGroup> wordGroups = new List<WordGroup>() {
         new WordGroup { 
             groupName = "Name", 
-            variations = new List<string> { "qoobo", "coobo", "kubo", "cubo", "koobo" }
+            variations = new List<string> { "qoobo", "coobo", "kubo", "cubo", "koobo", "robot"}
         },
         new WordGroup {
             groupName = "Happy",
@@ -51,7 +52,7 @@ public class VoiceDetector : MonoBehaviour
         },
         new WordGroup {
             groupName = "Food",
-            variations = new List<string> { "food", "hungry", "eat", "eating", "ate", "ate it", "ate it all", "ate it all the time" }
+            variations = new List<string> { "food", "hungary", "hungry", "eat", "eating", "ate", "ate it", "ate it all", "ate it all the time" }
         }
     };
 
@@ -244,12 +245,14 @@ public class VoiceDetector : MonoBehaviour
 
     private void HandleWordGroupMatch(string groupName)
     {
+        
         switch (groupName)
         {
             case "Name":
                 if (showDebugLogs)
                     Debug.Log("Detected: Qoobo's name was called!");
-                // add triggeredEvent
+                var response = emotionModel.CalculateEmotionalResponse("NameHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
 
             case "Happy":
@@ -273,7 +276,8 @@ public class VoiceDetector : MonoBehaviour
             case "Greeting":
                 if (showDebugLogs)
                     Debug.Log("Detected: A greeting!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("GreetingHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
 
             case "Farewell":
@@ -290,7 +294,9 @@ public class VoiceDetector : MonoBehaviour
             case "Food":
                 if (showDebugLogs)
                     Debug.Log("Detected: Food word!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("FoodHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
+
                 break;
         }
     }

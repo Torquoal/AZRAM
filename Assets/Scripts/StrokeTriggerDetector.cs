@@ -1,18 +1,9 @@
 using UnityEngine;
 
+[RequireComponent(typeof(Collider))]
 public class StrokeTriggerDetector : MonoBehaviour
 {
-    public enum TriggerType
-    {
-        Front,
-        Back,
-        Left,
-        Right,
-        Top
-    }
-
     [SerializeField] private StrokeDetector mainDetector;
-    [SerializeField] private TriggerType triggerType;
 
     private void Start()
     {
@@ -22,29 +13,16 @@ public class StrokeTriggerDetector : MonoBehaviour
             if (mainDetector == null)
             {
                 Debug.LogError($"No StrokeDetector found for {gameObject.name}!");
+                enabled = false;
                 return;
             }
         }
 
-        // Register this trigger with the main detector based on its type
+        // Ensure collider is set as trigger
         Collider col = GetComponent<Collider>();
-        switch (triggerType)
+        if (!col.isTrigger)
         {
-            case TriggerType.Front:
-                mainDetector.SetFrontTrigger(col);
-                break;
-            case TriggerType.Back:
-                mainDetector.SetBackTrigger(col);
-                break;
-            case TriggerType.Left:
-                mainDetector.SetLeftTrigger(col);
-                break;
-            case TriggerType.Right:
-                mainDetector.SetRightTrigger(col);
-                break;
-            case TriggerType.Top:
-                mainDetector.SetTopTrigger(col);
-                break;
+            col.isTrigger = true;
         }
     }
 

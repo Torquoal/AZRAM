@@ -3024,7 +3024,7 @@ GameObject:
   - component: {fileID: 247129692}
   - component: {fileID: 247129691}
   - component: {fileID: 247129690}
-  - component: {fileID: 247129689}
+  - component: {fileID: 247129693}
   m_Layer: 0
   m_Name: LeftCol
   m_TagString: Untagged
@@ -3047,20 +3047,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 318212777}
   m_LocalEulerAnglesHint: {x: -90, y: 90, z: 0}
---- !u!114 &247129689
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 247129687}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7afe9418eba2c0241a38fbdbc0124666, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainDetector: {fileID: 0}
-  triggerType: 2
 --- !u!64 &247129690
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -3133,6 +3119,19 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 247129687}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &247129693
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 247129687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7afe9418eba2c0241a38fbdbc0124666, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainDetector: {fileID: 0}
 --- !u!1 &247256902
 GameObject:
   m_ObjectHideFlags: 0
@@ -4387,14 +4386,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b5de230493730349b03f0cac5a32f31, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  leftHandPath: Camera Rig/[BuildingBlock] Interaction/[BuildingBlock] Hand Interactions/LeftHand
   rightHandPath: Camera Rig/[BuildingBlock] Interaction/[BuildingBlock] Hand Interactions/RightHand
-  maxStrokeTime: 1.5
-  triggerResetTime: 1
+  leftHandPath: Camera Rig/[BuildingBlock] Interaction/[BuildingBlock] Hand Interactions/LeftHand
+  frontTrigger: {fileID: 960477024}
+  backTrigger: {fileID: 1284292883}
   strokeCooldownTime: 2
   showDebugLogs: 1
-  sceneController: {fileID: 799751467}
-  holdDuration: 2
 --- !u!1 &323811445
 GameObject:
   m_ObjectHideFlags: 0
@@ -8745,7 +8742,7 @@ GameObject:
   - component: {fileID: 723023727}
   - component: {fileID: 723023726}
   - component: {fileID: 723023725}
-  - component: {fileID: 723023724}
+  - component: {fileID: 723023728}
   m_Layer: 0
   m_Name: TopCol
   m_TagString: Untagged
@@ -8768,20 +8765,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 318212777}
   m_LocalEulerAnglesHint: {x: -88.438, y: 0, z: 0}
---- !u!114 &723023724
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 723023722}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7afe9418eba2c0241a38fbdbc0124666, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainDetector: {fileID: 318212778}
-  triggerType: 4
 --- !u!64 &723023725
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -8854,6 +8837,24 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 723023722}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &723023728
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 723023722}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4b5de230493730349b03f0cac5a32f31, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rightHandPath: Camera Rig/[BuildingBlock] Interaction/[BuildingBlock] Hand Interactions/RightHand
+  leftHandPath: Camera Rig/[BuildingBlock] Interaction/[BuildingBlock] Hand Interactions/LeftHand
+  frontTrigger: {fileID: 0}
+  backTrigger: {fileID: 0}
+  strokeCooldownTime: 3
+  showDebugLogs: 1
 --- !u!1 &723041334
 GameObject:
   m_ObjectHideFlags: 0
@@ -9613,14 +9614,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b2c9eca53792884b81c596ac2c0d1e2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  longTermValence: 6
-  longTermArousal: 6.3
-  moodValence: 2
-  moodArousal: 2.2
+  longTermValence: -0
+  longTermArousal: 0
+  moodValence: -0
+  moodArousal: 0
   currentTemperament: 
   currentMood: 
   showDebugText: 1
-  useAcceleratedTesting: 1
+  useAcceleratedTesting: 0
   usePersistentEmotions: 0
   testingMultiplier: 250
   touchGauge: 49.2
@@ -12310,7 +12311,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainDetector: {fileID: 0}
-  triggerType: 0
 --- !u!1 &963561170
 GameObject:
   m_ObjectHideFlags: 0
@@ -16728,7 +16728,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainDetector: {fileID: 0}
-  triggerType: 1
 --- !u!1 &1285648368
 GameObject:
   m_ObjectHideFlags: 0
@@ -20252,7 +20251,7 @@ GameObject:
   - component: {fileID: 1570024657}
   - component: {fileID: 1570024656}
   - component: {fileID: 1570024655}
-  - component: {fileID: 1570024654}
+  - component: {fileID: 1570024658}
   m_Layer: 0
   m_Name: RightCol
   m_TagString: Untagged
@@ -20275,20 +20274,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 318212777}
   m_LocalEulerAnglesHint: {x: -90, y: 90, z: 0}
---- !u!114 &1570024654
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1570024652}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7afe9418eba2c0241a38fbdbc0124666, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  mainDetector: {fileID: 0}
-  triggerType: 3
 --- !u!64 &1570024655
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -20361,6 +20346,19 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1570024652}
   m_Mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!114 &1570024658
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1570024652}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7afe9418eba2c0241a38fbdbc0124666, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mainDetector: {fileID: 0}
 --- !u!1 &1572362427
 GameObject:
   m_ObjectHideFlags: 0
@@ -20930,6 +20928,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   emotionController: {fileID: 799751471}
+  emotionModel: {fileID: 799751474}
   sceneController: {fileID: 799751467}
   useDefaultMicrophone: 0
   monitorAudio: 0
@@ -21682,6 +21681,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: cb8330951934a0d4fa2b9f8cae70ece1, type: 3}
   - {fileID: 21300000, guid: 50f1619915c856443b6970d09df0db61, type: 3}
   - {fileID: 21300000, guid: 09162ae6c241f5a4dbdd80950cc9b3c0, type: 3}
+  - {fileID: 21300000, guid: c335c6829af40b040b0a5f26d5016c8f, type: 3}
 --- !u!1 &1698324083
 GameObject:
   m_ObjectHideFlags: 0
