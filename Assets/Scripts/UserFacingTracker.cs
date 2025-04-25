@@ -18,14 +18,19 @@ public class UserFacingTracker : MonoBehaviour
 
     [Header("Eye Contact Settings")]
     [SerializeField] private float requiredLookDuration = 5f;
-    [SerializeField] private float angleThreshold = 20f;
+    [SerializeField] private float lookAwayDuration = 10f;  // Duration to track looking away
+    [SerializeField] private float lookingAtThreshold = 15f;  // Angle threshold for looking at robot
+    [SerializeField] private float lookingAwayThreshold = 90f;  // Angle threshold for looking away from robot
 
     [SerializeField] private SceneController sceneController;
 
     private bool hasShown = false;
+    private bool hasPlayedLookAway = false;
     private float angleToQoobo;
     private float sustainedLookTimer = 0f;
+    private float lookAwayTimer = 0f;
     private bool isLookingAtRobot = false;
+    private bool isLookingAway = false;  // Explicitly track looking away state
 
     private void Start()
     {
@@ -48,22 +53,26 @@ public class UserFacingTracker : MonoBehaviour
         // Calculate the angle between the two directions
         angleToQoobo = Vector3.Angle(headDirection, directionToQoobo);
 
-        // Check if looking at robot within threshold
-        bool currentlyLooking = angleToQoobo < angleThreshold;
+        // Check looking states using both thresholds
+        bool currentlyLookingAt = angleToQoobo < lookingAtThreshold;
+        bool currentlyLookingAway = angleToQoobo > lookingAwayThreshold;
 
-        if (currentlyLooking && !isLookingAtRobot)
+        if (currentlyLookingAt && !isLookingAtRobot)
         {
             // Just started looking at robot
             isLookingAtRobot = true;
+            isLookingAway = false;
             sustainedLookTimer = 0f;
+            lookAwayTimer = 0f;
+            hasPlayedLookAway = false;
         }
-        else if (!currentlyLooking && isLookingAtRobot)
+        else if (!currentlyLookingAt && isLookingAtRobot)
         {
             // Stopped looking at robot
             isLookingAtRobot = false;
             sustainedLookTimer = 0f;
         }
-        else if (currentlyLooking && isLookingAtRobot)
+        else if (currentlyLookingAt && isLookingAtRobot)
         {
             // Continue timing the look duration
             sustainedLookTimer += Time.deltaTime;
@@ -77,8 +86,37 @@ public class UserFacingTracker : MonoBehaviour
             }
         }
 
+        // Handle looking away state separately
+        if (currentlyLookingAway && !isLookingAway)
+        {
+            // Just started looking away
+            isLookingAway = true;
+            lookAwayTimer = 0f;
+        }
+        else if (!currentlyLookingAway && isLookingAway)
+        {
+            // No longer looking away
+            isLookingAway = false;
+            lookAwayTimer = 0f;
+            hasPlayedLookAway = false;
+        }
+        else if (currentlyLookingAway && isLookingAway)
+        {
+            // Continue timing the look away duration
+            lookAwayTimer += Time.deltaTime;
+            
+            // Check if we've been looking away long enough
+            if (lookAwayTimer >= lookAwayDuration && sceneController.wakeUpComplete && !hasPlayedLookAway)
+            {
+                Debug.Log($"User has been looking away (angle: {angleToQoobo:F1}°) for {lookAwayTimer:F1}s");
+                sceneController.PlaySound("peep");
+                sceneController.ShowThought("looking");
+                hasPlayedLookAway = true;
+            }
+        }
+
         // Update debug texts
-        angleDebugText.text = $"Facing Angle: {angleToQoobo:F1}°\nLook Timer: {sustainedLookTimer:F1}s";
+        angleDebugText.text = $"Angle: {angleToQoobo:F1}°\nLook Timer: {sustainedLookTimer:F1}s\nAway Timer: {lookAwayTimer:F1}s\nState: {(isLookingAtRobot ? "Looking At" : isLookingAway ? "Looking Away" : "Neutral")}";
         if (lastEventText != null && responseText != null && emotionModel != null)
         {
             lastEventText.text = $"Last Event: {emotionModel.LastTriggeredEvent}";

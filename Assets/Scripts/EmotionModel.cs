@@ -29,6 +29,9 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] private bool usePersistentEmotions = true;  // Toggle for persistent emotions
     [SerializeField] private float testingMultiplier = 180f; // Speed up time for testing
 
+    [Header("Response Settings")]
+    [SerializeField] [Range(0, 100)] private float responseChance = 100f; // Percentage chance to show emotional response
+
     // Struct to hold the emotional response values
     private struct EmotionalResponseValues
     {
@@ -61,6 +64,9 @@ public class EmotionModel : MonoBehaviour
     // Base response values for each event
     private Dictionary<string, EmotionalResponseValues> eventBaseValues = new Dictionary<string, EmotionalResponseValues>()
     {
+        { "HungerNeeded", new EmotionalResponseValues { Valence = -5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "HungerUnfulfilled", new EmotionalResponseValues { Valence = -10f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = -3f } },
+        { "HungerFulfilled", new EmotionalResponseValues { Valence = 5f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 3f } },
         { "TouchNeeded", new EmotionalResponseValues { Valence = -2f, Arousal = 2f, Touch = -5f, Rest = 0f, Social = -2f } },
         { "TouchUnfulfilled", new EmotionalResponseValues { Valence = -5f, Arousal = 0f, Touch = -10f, Rest = -2f, Social = -5f } },
         { "TouchFulfilled", new EmotionalResponseValues { Valence = 8f, Arousal = 5f, Touch = 10f, Rest = 2f, Social = 5f } },
@@ -422,10 +428,17 @@ public class EmotionModel : MonoBehaviour
         }
 
         string displayString = emotionalDisplayTable(response);
-        Debug.Log($"Emotional Response: Combined(V={response.Valence:F1}, A={response.Arousal:F1}) -> Event='{triggeredEvent}', Mood='{currentMood}', Display='{displayString}'");
+        
+        // Roll for response chance
+        float roll = UnityEngine.Random.Range(0f, 100f);
+        bool shouldDisplay = roll <= responseChance;
+        Debug.Log($"Final Result: Event='{triggeredEvent}', Mood='{currentMood}', Display='{displayString}'");
+        Debug.Log($"Response chance roll: {roll:F1}/{responseChance:F1} - Will {(shouldDisplay ? "display" : "skip")} emotional response");
+        
         LastTriggeredEvent = triggeredEvent;
-        LastDisplayString = displayString;
-        return new EmotionalResponseResult(displayString, triggeredEvent);
+        LastDisplayString = shouldDisplay ? displayString : "neutral";
+        
+        return new EmotionalResponseResult(shouldDisplay ? displayString : "neutral", triggeredEvent);
     }
 
 

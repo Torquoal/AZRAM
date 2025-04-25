@@ -28,6 +28,9 @@ public class ThoughtBubbleController : MonoBehaviour
     private Vector3[] initialPositions;
     private bool isVisible = false;
     private Coroutine floatingCoroutine;
+    private Vector3 mainBubbleBasePos;
+    private Vector3 smallBubble1BasePos;
+    private Vector3 smallBubble2BasePos;
 
     void Start()
     {
@@ -42,10 +45,6 @@ public class ThoughtBubbleController : MonoBehaviour
                 if (thoughtSprites[i] == null)
                 {
                     Debug.LogError($"Thought sprite at index {i} is null!");
-                }
-                else
-                {
-                    //Debug.Log($"Sprite {i}: {thoughtSprites[i].name}");
                 }
             }
         }
@@ -69,13 +68,12 @@ public class ThoughtBubbleController : MonoBehaviour
         if (thoughtImage == null) Debug.LogError("Thought Image not assigned!");
         if (thoughtSprites == null || thoughtSprites.Length == 0) Debug.LogError("No thought sprites assigned!");
         
-        // Store initial positions for floating animation
-        initialPositions = new Vector3[3];
-        initialPositions[0] = mainBubble.transform.localPosition;
-        initialPositions[1] = smallBubble1.transform.localPosition;
-        initialPositions[2] = smallBubble2.transform.localPosition;
+        // Store initial positions
+        mainBubbleBasePos = mainBubble.transform.localPosition;
+        smallBubble1BasePos = smallBubble1.transform.localPosition;
+        smallBubble2BasePos = smallBubble2.transform.localPosition;
 
-        Debug.Log($"Initial positions stored: Main={initialPositions[0]}, Small1={initialPositions[1]}, Small2={initialPositions[2]}");
+        Debug.Log($"Initial positions stored: Main={mainBubbleBasePos}, Small1={smallBubble1BasePos}, Small2={smallBubble2BasePos}");
 
         // Initially hide all bubbles
         SetBubblesVisible(false);
@@ -219,13 +217,6 @@ public class ThoughtBubbleController : MonoBehaviour
         float[] timeOffsets = { 0f, 0.33f, 0.66f }; // Different starting points for each bubble
         float startTime = Time.time;
         
-        // Store the original positions when the floating starts
-        Vector3 mainOriginal = mainBubble.transform.localPosition;
-        Vector3 small1Original = smallBubble1.transform.localPosition;
-        Vector3 small2Original = smallBubble2.transform.localPosition;
-        
-        Debug.Log($"Starting float animation from positions: Main={mainOriginal}, Small1={small1Original}, Small2={small2Original}");
-        
         while (true)
         {
             float time = (Time.time - startTime) * floatSpeed;
@@ -236,7 +227,7 @@ public class ThoughtBubbleController : MonoBehaviour
                 Mathf.Cos(time * 0.8f + timeOffsets[0]) * floatAmount * 15f,
                 0f
             );
-            mainBubble.transform.localPosition = mainOriginal + mainOffset;
+            mainBubble.transform.localPosition = mainBubbleBasePos + mainOffset;
             
             // Medium movement for middle bubble
             Vector3 small1Offset = new Vector3(
@@ -244,7 +235,7 @@ public class ThoughtBubbleController : MonoBehaviour
                 Mathf.Cos(time * 0.9f + timeOffsets[1]) * floatAmount * 12f,
                 0f
             );
-            smallBubble1.transform.localPosition = small1Original + small1Offset;
+            smallBubble1.transform.localPosition = smallBubble1BasePos + small1Offset;
             
             // Smaller movement for smallest bubble
             Vector3 small2Offset = new Vector3(
@@ -252,15 +243,7 @@ public class ThoughtBubbleController : MonoBehaviour
                 Mathf.Cos(time + timeOffsets[2]) * floatAmount * 8f,
                 0f
             );
-            smallBubble2.transform.localPosition = small2Original + small2Offset;
-            
-            // Log positions occasionally to verify movement
-            //if (Time.frameCount % 100 == 0)
-            //{
-            //    Debug.Log($"Current positions - Main: {mainBubble.transform.localPosition}, " +
-           //              $"Small1: {smallBubble1.transform.localPosition}, " +
-            //             $"Small2: {smallBubble2.transform.localPosition}");
-            //}
+            smallBubble2.transform.localPosition = smallBubble2BasePos + small2Offset;
             
             yield return null;
         }
@@ -271,6 +254,14 @@ public class ThoughtBubbleController : MonoBehaviour
         mainBubble.SetActive(visible);
         smallBubble1.SetActive(visible);
         smallBubble2.SetActive(visible);
+        
+        // Reset positions when hiding bubbles
+        if (!visible)
+        {
+            mainBubble.transform.localPosition = mainBubbleBasePos;
+            smallBubble1.transform.localPosition = smallBubble1BasePos;
+            smallBubble2.transform.localPosition = smallBubble2BasePos;
+        }
     }
 
     // Convenience methods for showing specific thoughts
