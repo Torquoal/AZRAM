@@ -6,7 +6,10 @@ public class UserFacingTracker : MonoBehaviour
     [Header("References")]
     [SerializeField] private GameObject qooboMesh;
     [SerializeField] private TextMeshProUGUI angleDebugText;
+    [SerializeField] private TextMeshProUGUI lastEventText;
+    [SerializeField] private TextMeshProUGUI responseText;
     [SerializeField] private Camera arCamera;
+    [SerializeField] private EmotionModel emotionModel;
 
     [Header("Debug Settings")]
     [SerializeField] private bool showDebugRay = true;
@@ -15,7 +18,7 @@ public class UserFacingTracker : MonoBehaviour
 
     [Header("Eye Contact Settings")]
     [SerializeField] private float requiredLookDuration = 5f;
-    [SerializeField] private float angleThreshold = 10f;
+    [SerializeField] private float angleThreshold = 20f;
 
     [SerializeField] private SceneController sceneController;
 
@@ -68,13 +71,19 @@ public class UserFacingTracker : MonoBehaviour
             // Check if we've reached the required duration
             if (sustainedLookTimer >= requiredLookDuration && sceneController.wakeUpComplete && !hasShown)
             {
+                Debug.Log("UserFacingTracker Gaze on Qoobo Conditions Met");
                 sceneController.ShowThought("looking");
                 hasShown = true;
             }
         }
 
-        // Update the debug text
+        // Update debug texts
         angleDebugText.text = $"Facing Angle: {angleToQoobo:F1}°\nLook Timer: {sustainedLookTimer:F1}s";
+        if (lastEventText != null && responseText != null && emotionModel != null)
+        {
+            lastEventText.text = $"Last Event: {emotionModel.LastTriggeredEvent}";
+            responseText.text = $"Response: {emotionModel.LastDisplayString}";
+        }
 
         // Draw debug ray if enabled
         if (showDebugRay)

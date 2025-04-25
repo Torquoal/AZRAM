@@ -13,6 +13,9 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] [Range(-10, 10)] private float moodValence;
     [SerializeField] [Range(-10, 10)] private float moodArousal;
 
+    private float eventWeight = 0.5f;
+    private float moodWeight = 0.5f;
+
     private float moodValenceOnWakeup;
     private float arousalArousalOnWakup;
 
@@ -21,7 +24,7 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] private string currentMood;
     
     [Header("Debug Settings")]
-    [SerializeField] private bool showDebugText = true;
+    [SerializeField] private bool showDebugLogs = true;
     [SerializeField] private bool useAcceleratedTesting = false;
     [SerializeField] private bool usePersistentEmotions = true;  // Toggle for persistent emotions
     [SerializeField] private float testingMultiplier = 180f; // Speed up time for testing
@@ -41,19 +44,38 @@ public class EmotionModel : MonoBehaviour
         }
     }
 
-    // The emotional response lookup table using strings
-    private Dictionary<string, Dictionary<string, EmotionalResponseValues>> responseTable;
-
-    
-
-    // Dictionary to store the emotional response the robot will eventually display
-    private Dictionary<string, string> emotionalResponse = new Dictionary<string, string>
+    // Base response values for each mood state
+    private Dictionary<string, EmotionalResponseValues> moodBaseValues = new Dictionary<string, EmotionalResponseValues>()
     {
-        { "face", "" },
-        { "light", "" },
-        { "sound", "" },
-        { "thought", "" },
-        { "tail", "" }
+        { "Excited", new EmotionalResponseValues { Valence = 8f, Arousal = 8f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Happy", new EmotionalResponseValues { Valence = 8f, Arousal = 4f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Relaxed", new EmotionalResponseValues { Valence = 4f, Arousal = -4f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Energetic", new EmotionalResponseValues { Valence = 4f, Arousal = 8f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Neutral", new EmotionalResponseValues { Valence = 0f, Arousal = 0f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Tired", new EmotionalResponseValues { Valence = -2f, Arousal = -6f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Annoyed", new EmotionalResponseValues { Valence = -4f, Arousal = 4f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Sad", new EmotionalResponseValues { Valence = -6f, Arousal = -2f, Touch = 0f, Rest = 0f, Social = 0f } },
+        { "Gloomy", new EmotionalResponseValues { Valence = -8f, Arousal = -8f, Touch = 0f, Rest = 0f, Social = 0f } }
+    };
+
+    // Base response values for each event
+    private Dictionary<string, EmotionalResponseValues> eventBaseValues = new Dictionary<string, EmotionalResponseValues>()
+    {
+        { "TouchNeeded", new EmotionalResponseValues { Valence = -2f, Arousal = 2f, Touch = -5f, Rest = 0f, Social = -2f } },
+        { "TouchUnfulfilled", new EmotionalResponseValues { Valence = -5f, Arousal = 0f, Touch = -10f, Rest = -2f, Social = -5f } },
+        { "TouchFulfilled", new EmotionalResponseValues { Valence = 8f, Arousal = 5f, Touch = 10f, Rest = 2f, Social = 5f } },
+        { "RestNeeded", new EmotionalResponseValues { Valence = -2f, Arousal = -5f, Touch = 0f, Rest = -5f, Social = -2f } },
+        { "RestUnfulfilled", new EmotionalResponseValues { Valence = -5f, Arousal = -8f, Touch = -2f, Rest = -10f, Social = -5f } },
+        { "RestFulfilled", new EmotionalResponseValues { Valence = 5f, Arousal = 2f, Touch = 2f, Rest = 10f, Social = 2f } },
+        { "SocialNeeded", new EmotionalResponseValues { Valence = -2f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = -5f } },
+        { "SocialUnfulfilled", new EmotionalResponseValues { Valence = -5f, Arousal = -2f, Touch = -2f, Rest = -2f, Social = -10f } },
+        { "SocialFulfilled", new EmotionalResponseValues { Valence = 5f, Arousal = 5f, Touch = 2f, Rest = 2f, Social = 10f } },
+        { "StrokeFrontToBack", new EmotionalResponseValues { Valence = 8f, Arousal = 5f, Touch = 10f, Rest = 2f, Social = 5f } },
+        { "StrokeBackToFront", new EmotionalResponseValues { Valence = -5f, Arousal = 8f, Touch = 5f, Rest = -2f, Social = 2f } },
+        { "NameHeard", new EmotionalResponseValues { Valence = 5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 5f } },
+        { "GreetingHeard", new EmotionalResponseValues { Valence = 5f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = 5f } },
+        { "FoodHeard", new EmotionalResponseValues { Valence = 5f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = 2f } },
+        { "TooFarAway", new EmotionalResponseValues { Valence = -5f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = -5f } }
     };
 
     [Header("Need Values")]
@@ -103,6 +125,10 @@ public class EmotionModel : MonoBehaviour
     [Header("References")]
     [SerializeField] private EmotionController emotionController;
 
+    // Debug properties
+    public string LastTriggeredEvent { get; private set; }
+    public string LastDisplayString { get; private set; }
+
     //test Functions
     [ContextMenu("Test Emotional Model - StrokeFrontToBack")]
     private void TestStrokeFrontToBack()
@@ -140,7 +166,6 @@ public class EmotionModel : MonoBehaviour
             Debug.Log($"Using inspector values - Valence: {longTermValence}, Arousal: {longTermArousal}");
         }
 
-        InitializeResponseTable();
         currentTemperament = classifyEmotionalState(longTermValence, longTermArousal);
         Debug.Log($"Current emotional state on wakeup: {currentTemperament}");
 
@@ -357,66 +382,68 @@ public class EmotionModel : MonoBehaviour
         }
 
         currentMood = classifyEmotionalState(moodValence, moodArousal);
-        Debug.Log("Emotion Model: currentMood: " + currentMood);
-        
-        // Debug logging
-        Debug.Log($"Calculating response for event '{triggeredEvent}' in mood '{currentMood}'");
-        Debug.Log($"Response table contains {responseTable.Count} events");
-        
-        if (!responseTable.ContainsKey(triggeredEvent))
-        {
-            Debug.LogError($"No responses found for event: {triggeredEvent}");
-            return new EmotionalResponseResult("neutral", triggeredEvent);
+        if (showDebugLogs){
+            Debug.Log($"Calculating response for event '{triggeredEvent}' in mood '{currentMood}'");
         }
         
-        if (!responseTable[triggeredEvent].ContainsKey(currentMood))
-        {
-            Debug.LogError($"No response found for mood: {currentMood} in event: {triggeredEvent}");
-            return new EmotionalResponseResult("neutral", triggeredEvent);
-        }
 
-        EmotionalResponseValues response = responseTable[triggeredEvent][currentMood];
-        Debug.Log("Calculated emotional response to " + triggeredEvent + " in " + currentMood + " is:\n" + response);
+        // Get base values for current mood
+        if (!moodBaseValues.ContainsKey(currentMood))
+        {
+            if (showDebugLogs){
+                Debug.LogError($"No base values found for mood: {currentMood}");
+            }
+            return new EmotionalResponseResult("neutral", triggeredEvent);
+        }
+        EmotionalResponseValues moodValues = moodBaseValues[currentMood];
+
+        // Get base values for event
+        if (!eventBaseValues.ContainsKey(triggeredEvent))
+        {
+            if (showDebugLogs){
+                Debug.LogError($"No base values found for event: {triggeredEvent}");
+            }
+            return new EmotionalResponseResult("neutral", triggeredEvent);
+        }
+        EmotionalResponseValues eventValues = eventBaseValues[triggeredEvent];
+
+        // Combine mood and event values with weights
+        EmotionalResponseValues response = new EmotionalResponseValues
+        {
+            Valence = moodWeight*moodValues.Valence + eventWeight*eventValues.Valence,
+            Arousal = moodWeight*moodValues.Arousal + eventWeight*eventValues.Arousal,
+            Touch = eventValues.Touch,     // Keep original event values for needs
+            Rest = eventValues.Rest,       // as they directly affect gauges
+            Social = eventValues.Social
+        };
+
+        if (showDebugLogs){
+            Debug.Log($"Combined Response: V={response.Valence:F1}, A={response.Arousal:F1} | From: Mood({currentMood}): V={moodValues.Valence:F1}, A={moodValues.Arousal:F1}, Event({triggeredEvent}): V={eventValues.Valence:F1}, A={eventValues.Arousal:F1}");
+        }
 
         string displayString = emotionalDisplayTable(response);
-
+        Debug.Log($"Emotional Response: Combined(V={response.Valence:F1}, A={response.Arousal:F1}) -> Event='{triggeredEvent}', Mood='{currentMood}', Display='{displayString}'");
+        LastTriggeredEvent = triggeredEvent;
+        LastDisplayString = displayString;
         return new EmotionalResponseResult(displayString, triggeredEvent);
     }
 
 
     /*
-   Tables!
+    Emotional Response System:
 
-   1. classifyEmotionalState() returns the current emotional state as a semantic string based on
-   long term valence and arousal values.
+    1. classifyEmotionalState() returns the current emotional state as a semantic string based on
+    valence and arousal values.
 
-   2. InitializeResponseTable() this a table that returns a specific set of emotional response values
-   based on an A) a user action or robot need gauge threshold (e.g., TouchNeeded or StrokeFrontToBack)
-   and B) the current emotional state as returned by classifyEmotionalState(). These responses have five
-   values. Valence and Arousal are used to identify what short term emotional response will display using
-   the displayTable. Touch, Rest and Social are values to be added to the robot's need gauges, allowing
-   certain user actions to impact the robot's needs.
+    2. The emotional response system combines:
+       - Base mood values from moodBaseValues dictionary
+       - Event values from eventBaseValues dictionary
+       These are combined with weights to determine the final emotional response.
 
-   3. displayTable() this is a table that uses the valence and arousal values from the responseTable
-   to return a specific string that SceneController will use to select what emotional displays are
-   shown. The valence and arousal values are fuzzed first enough that emotional responses are not 
-   perfectly consistent and the robot can sometimes show a display one column or row beyond the norrmal
-   response (fuzz of 3?). Additionally, a small percentage (10%?) of these values is added to the
-   robot's long term valence and arousal, allowing for slow mood change and long-term evolution.
+    3. displayTable() uses the combined valence and arousal values to determine which
+    emotional display to show. Values are fuzzed for variety, and a small percentage
+    affects the robot's mood, allowing for gradual mood changes over time.
     */
-
-    // Array of special events that bypass normal emotion classification
-    private readonly string[] specialEvents = new string[]
-    {
-        "HungerNeeded",
-        "RestNeeded",
-        "TouchNeeded",
-        "SocialNeeded",
-        "HungerFulfilled",
-        "RestFulfilled",
-        "TouchFulfilled",
-        "SocialFulfilled",
-    };
 
     private string classifyEmotionalState(float valence, float arousal)
     {
@@ -464,65 +491,6 @@ public class EmotionModel : MonoBehaviour
         return classifiedEmotion;
     }
 
-
-    private void InitializeResponseTable()
-    {
-        responseTable = new Dictionary<string, Dictionary<string, EmotionalResponseValues>>();
-        
-        // Path to the CSV file in the StreamingAssets folder
-        string csvPath = Path.Combine(Application.streamingAssetsPath, "EmotionalResponses.csv");
-
-        try
-        {
-            // Create StreamingAssets directory if it doesn't exist
-            Directory.CreateDirectory(Application.streamingAssetsPath);
-            
-            // Read all lines from the CSV file
-            string[] lines = File.ReadAllLines(csvPath);
-            
-            // Skip the header row
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] values = lines[i].Split(',');
-                
-                // Parse the CSV values
-                string eventType = values[0];
-                string emotionalState = values[1];
-                float valence = float.Parse(values[2]);
-                float arousal = float.Parse(values[3]);
-                float touch = float.Parse(values[4]);
-                float rest = float.Parse(values[5]);
-                float social = float.Parse(values[6]);
-                
-                // Create response value
-                EmotionalResponseValues response = new EmotionalResponseValues
-                {
-                    Valence = valence,
-                    Arousal = arousal,
-                    Touch = touch,
-                    Rest = rest,
-                    Social = social
-                };
-
-                // Initialize dictionary for this event type if it doesn't exist
-                if (!responseTable.ContainsKey(eventType))
-                {
-                    responseTable[eventType] = new Dictionary<string, EmotionalResponseValues>();
-                }
-                
-                // Add the response to the table
-                responseTable[eventType][emotionalState] = response;
-            }
-            
-            Debug.Log($"Successfully loaded emotional responses from {csvPath}");
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Error loading emotional responses from CSV: {e.Message}");
-            // Initialize with default values as fallback
-        }
-    }
-
     private string emotionalDisplayTable(EmotionalResponseValues response)
     {
         string displayString = "Neutral";
@@ -532,9 +500,11 @@ public class EmotionModel : MonoBehaviour
         restGauge += response.Rest;
         socialGauge += response.Social;
 
-        Debug.Log("Added to Gauges: Touch: " + response.Touch + 
+        if (showDebugLogs){
+            Debug.Log("Added to Gauges: Touch: " + response.Touch + 
                                    " Rest: " + response.Rest + 
                                  " Social: " + response.Social);
+        }
         
         //fuzz valence and arousal values
         float fuzzedValence = response.Valence + UnityEngine.Random.Range(-3f, 3f);
@@ -551,20 +521,15 @@ public class EmotionModel : MonoBehaviour
         // Update current mood after changes
         currentMood = classifyEmotionalState(moodValence, moodArousal);
 
-        Debug.Log("Emotion Model: response.Valence: " + response.Valence + 
+        if (showDebugLogs){
+            Debug.Log("Emotion Model: response.Valence: " + response.Valence + 
                 " fuzzed to " + fuzzedValence + 
                 "and 5%" + fuzzedValence*0.01f + "added to mood valence");
-        Debug.Log("Emotion Model: response.Arousal: " + response.Arousal + 
+            Debug.Log("Emotion Model: response.Arousal: " + response.Arousal + 
                   " fuzzed to " + fuzzedArousal + 
                   "and 5%" + fuzzedArousal*0.01f + "added to mood arousal");
-        Debug.Log("Emotion Model: Updated current mood to: " + currentMood);
-
-
-
-        //TODO: could also add the logic here to handle special events, e.g., if Rest <10 a special
-        //sleeping display is triggered and the normal table is bypassed. SceneController will 
-        //do something similar for user-initiated special events, such as saying Qoobo's name.
-        //Only if the triggeredEvent is not a special event will the normal table be used.
+            Debug.Log("Emotion Model: Updated current mood to: " + currentMood);
+        }
 
         if (fuzzedArousal > 6){
             if (fuzzedValence > 6){
@@ -629,7 +594,9 @@ public class EmotionModel : MonoBehaviour
         } else {
             Debug.LogError("Fuzzed Arousal is out of range");
         }
-        Debug.Log("Emotion Model: selected display string from fuzzed values: " + displayString);
+        if (showDebugLogs){
+            Debug.Log("Emotion Model: selected display string from fuzzed values: " + displayString);
+        }
         return displayString;
     }
 
@@ -654,7 +621,9 @@ public class EmotionModel : MonoBehaviour
             PlayerPrefs.SetFloat(LONG_TERM_AROUSAL_KEY, longTermArousal);
             PlayerPrefs.Save();
 
-            Debug.Log($"Saved long term values - Valence: {longTermValence}, Arousal: {longTermArousal}");
+            if (showDebugLogs){
+                Debug.Log($"Saved long term values - Valence: {longTermValence}, Arousal: {longTermArousal}");
+            }
         }
         else
         {
