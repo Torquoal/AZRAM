@@ -258,19 +258,22 @@ public class VoiceDetector : MonoBehaviour
             case "Happy":
                 if (showDebugLogs)
                     Debug.Log("Detected: A happy word!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("HappyHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
 
             case "Sad":
                 if (showDebugLogs)
                     Debug.Log("Detected: A sad word!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("SadHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
 
             case "Angry":
                 if (showDebugLogs)
                     Debug.Log("Detected: An angry word!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("AngryHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
 
             case "Greeting":
@@ -283,20 +286,29 @@ public class VoiceDetector : MonoBehaviour
             case "Farewell":
                 if (showDebugLogs)
                     Debug.Log("Detected: A farewell!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("FarewellHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
 
             case "Praise":
                 if (showDebugLogs)
                     Debug.Log("Detected: Words of praise!");
-                // add triggeredEvent
+                response = emotionModel.CalculateEmotionalResponse("PraiseHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
+
             case "Food":
                 if (showDebugLogs)
                     Debug.Log("Detected: Food word!");
                 response = emotionModel.CalculateEmotionalResponse("FoodHeard");
                 emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
-
+                break;
+                
+            case "Touch":
+                if (showDebugLogs)
+                    Debug.Log("Detected: Food word!");
+                response = emotionModel.CalculateEmotionalResponse("TouchHeard");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 break;
         }
     }

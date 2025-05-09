@@ -217,12 +217,30 @@ public class EmotionController : MonoBehaviour
                 break;
             case "nameheard":
                 sceneController.ShowThought("exclamation");
-                break;                
+                break;
             case "loudnoise":
                 sceneController.PlaySound("surprised");
                 sceneController.ShowThought("exclamation");
                 sceneController.SetFaceExpression("shocked");
                 sceneController.TailsEmotion("surprised");
+                break;
+            case "happyheard":
+                sceneController.ShowThought("happy");
+                break;
+            case "sadheard":
+                sceneController.ShowThought("sad");
+                break;
+            case "angryheard":
+                sceneController.ShowThought("angry");
+                break;
+            case "farewellheard":
+                sceneController.ShowThought("sad");
+                break;
+            case "praiseheard":
+                sceneController.ShowThought("heart");
+                break;
+            case "touchheard":
+                sceneController.ShowThought("hand");
                 break;
         }
 

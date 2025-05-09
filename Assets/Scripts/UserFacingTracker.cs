@@ -19,8 +19,8 @@ public class UserFacingTracker : MonoBehaviour
     [Header("Eye Contact Settings")]
     [SerializeField] private float requiredLookDuration = 5f;
     [SerializeField] private float lookAwayDuration = 10f;  // Duration to track looking away
-    [SerializeField] private float lookingAtThreshold = 15f;  // Angle threshold for looking at robot
-    [SerializeField] private float lookingAwayThreshold = 90f;  // Angle threshold for looking away from robot
+    [SerializeField] private float lookingAtThreshold;  // Angle threshold for looking at robot
+    [SerializeField] private float lookingAwayThreshold;  // Angle threshold for looking away from robot
 
     [SerializeField] private SceneController sceneController;
 
@@ -109,7 +109,7 @@ public class UserFacingTracker : MonoBehaviour
             if (lookAwayTimer >= lookAwayDuration && sceneController.wakeUpComplete && !hasPlayedLookAway)
             {
                 Debug.Log($"User has been looking away (angle: {angleToQoobo:F1}°) for {lookAwayTimer:F1}s");
-                sceneController.PlaySound("peep");
+                sceneController.PlaySound("sad");
                 sceneController.ShowThought("looking");
                 hasPlayedLookAway = true;
             }

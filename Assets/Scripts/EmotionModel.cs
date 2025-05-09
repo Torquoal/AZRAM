@@ -13,8 +13,8 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] [Range(-10, 10)] private float moodValence;
     [SerializeField] [Range(-10, 10)] private float moodArousal;
 
-    private float eventWeight = 0.5f;
-    private float moodWeight = 0.5f;
+    private float eventWeight = 0.7f;
+    private float moodWeight = 0.3f;
 
     private float moodValenceOnWakeup;
     private float arousalArousalOnWakup;
@@ -77,11 +77,17 @@ public class EmotionModel : MonoBehaviour
         { "SocialUnfulfilled", new EmotionalResponseValues { Valence = -5f, Arousal = -2f, Touch = -2f, Rest = -2f, Social = -10f } },
         { "SocialFulfilled", new EmotionalResponseValues { Valence = 5f, Arousal = 5f, Touch = 2f, Rest = 2f, Social = 10f } },
         { "StrokeFrontToBack", new EmotionalResponseValues { Valence = 8f, Arousal = 5f, Touch = 10f, Rest = 2f, Social = 5f } },
-        { "StrokeBackToFront", new EmotionalResponseValues { Valence = -5f, Arousal = 8f, Touch = 5f, Rest = -2f, Social = 2f } },
+        { "StrokeBackToFront", new EmotionalResponseValues { Valence = -10f, Arousal = 3f, Touch = 5f, Rest = -2f, Social = 2f } },
         { "NameHeard", new EmotionalResponseValues { Valence = 5f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 5f } },
         { "GreetingHeard", new EmotionalResponseValues { Valence = 5f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = 5f } },
         { "FoodHeard", new EmotionalResponseValues { Valence = 5f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = 2f } },
-        { "TooFarAway", new EmotionalResponseValues { Valence = -5f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = -5f } }
+        { "TooFarAway", new EmotionalResponseValues { Valence = -10f, Arousal = 2f, Touch = 0f, Rest = 0f, Social = -5f } },
+        { "HappyHeard", new EmotionalResponseValues { Valence = 8f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 3f } },
+        { "SadHeard", new EmotionalResponseValues { Valence = -8f, Arousal = -3f, Touch = 0f, Rest = 0f, Social = 3f } },
+        { "AngryHeard", new EmotionalResponseValues { Valence = -8f, Arousal = 3f, Touch = 0f, Rest = 0f, Social = 2f } },
+        { "FarewellHeard", new EmotionalResponseValues { Valence = -2f, Arousal = -2f, Touch = 0f, Rest = 0f, Social = 3f } },
+        { "PraiseHeard", new EmotionalResponseValues { Valence = 10f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 5f } },
+        { "TouchHeard", new EmotionalResponseValues { Valence = 3f, Arousal = 2f, Touch = 3f, Rest = 0f, Social = 2f } }
     };
 
     [Header("Need Values")]
@@ -520,8 +526,10 @@ public class EmotionModel : MonoBehaviour
         }
         
         //fuzz valence and arousal values
-        float fuzzedValence = response.Valence + UnityEngine.Random.Range(-3f, 3f);
-        float fuzzedArousal = response.Arousal + UnityEngine.Random.Range(-3f, 3f);
+        float fuzzedValence = response.Valence + UnityEngine.Random.Range(-1f, 1f);
+        float fuzzedArousal = response.Arousal + UnityEngine.Random.Range(-1f, 1f);
+
+        Debug.Log("Fuzzed Final Values. Valence:" + fuzzedValence + " Arousal: " + fuzzedArousal);
 
         //add a small percentage (5%?) of these values to the robot's long term valence and arousal.
         moodValence += fuzzedValence * 0.01f;
@@ -551,9 +559,9 @@ public class EmotionModel : MonoBehaviour
                 displayString = "Excited";
             } else if (fuzzedValence < 3 && fuzzedValence > 3){
                 displayString = "Surprised";
-            } else if (fuzzedValence < -3 && fuzzedValence > -6){
+            } else if (fuzzedValence < -3 && fuzzedValence > -8){
                 displayString = "Tense";
-            } else if (fuzzedValence < -6){
+            } else if (fuzzedValence < -8){
                 displayString = "Scared";
             }
         } else if (fuzzedArousal < 6 && fuzzedArousal > 3){

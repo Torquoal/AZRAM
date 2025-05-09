@@ -20,6 +20,7 @@ public class QooboPositioner : MonoBehaviour
     
     private bool isPositioned = false;
     private bool isRepositioning = false;
+    private bool hasPinchPositioned = false; // New flag to track if pinch positioning has been used
     private XRHandSubsystem handSubsystem;
 
     void Start()
@@ -76,7 +77,7 @@ public class QooboPositioner : MonoBehaviour
             UpdateQooboPosition();
             // Reset states after space key positioning
             isRepositioning = false;
-            isPositioned = false;  // Allow pinch to work again
+            isPositioned = false;
         }
 
         if (leftHandTracked && rightHandTracked)
@@ -97,7 +98,7 @@ public class QooboPositioner : MonoBehaviour
                 Debug.Log($"Pinch distance: {pinchDistance}, Threshold: {pinchThreshold}, IsPinching: {isPinching}");
             }
 
-            if (isPinching)
+            if (isPinching && !hasPinchPositioned) // Only allow pinch if it hasn't been used before
             {
                 if (!isPositioned || isRepositioning)
                 {
@@ -106,10 +107,12 @@ public class QooboPositioner : MonoBehaviour
                     {
                         Debug.Log($"Pinch detected - Updating position (isPositioned: {isPositioned}, isRepositioning: {isRepositioning})");
                         UpdateQooboPosition();
+                        hasPinchPositioned = true; // Set the flag after first successful pinch positioning
+                        Debug.Log("Pinch positioning has been used - further positioning only available via spacebar");
                     }
                     else
                     {
-                        //Debug.Log("Pinch detected but wake-up sequence is complete - ignoring");
+                        Debug.Log("Pinch detected but wake-up sequence is complete - ignoring");
                     }
                 }
                 else
@@ -117,12 +120,9 @@ public class QooboPositioner : MonoBehaviour
                     Debug.Log("Pinch detected but position is locked");
                 }
             }
-            else if (isRepositioning)
+            else if (isPinching && hasPinchPositioned)
             {
-                // Lock in position when pinch is released
-                Debug.Log("Pinch released - Locking position");
-                isRepositioning = false;
-                isPositioned = true;
+                Debug.Log("Pinch detected but pinch positioning has already been used - use spacebar to reposition");
             }
         }
     }

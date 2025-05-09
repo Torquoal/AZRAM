@@ -405,7 +405,7 @@ MonoBehaviour:
   - {fileID: -7895442964100881395}
   - {fileID: 2497339995422133549}
   - {fileID: -5941725581135416239}
-  - {fileID: -1253268371513643055}
+  - {fileID: -1294959754970392664}
   - {fileID: 907837948727041736}
   - {fileID: -7351301907148479589}
   - {fileID: 3866851632927239666}
@@ -1112,6 +1112,26 @@ MonoBehaviour:
   company: Unity
   priority: 0
   required: 0
+--- !u!114 &-1294959754970392664
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: MetaHandTrackingAim Standalone
+  m_EditorClassIdentifier: Unity.XR.Hands:UnityEngine.XR.Hands.OpenXR:MetaHandTrackingAim
+  m_enabled: 0
+  nameUi: Meta Hand Tracking Aim
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.metahandtrackingaim
+  openxrExtensionStrings: XR_FB_hand_tracking_aim
+  company: Unity
+  priority: 0
+  required: 0
 --- !u!114 &-1253268371513643055
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1252,7 +1272,7 @@ MonoBehaviour:
   - {fileID: -3340658034481943565}
   - {fileID: -5660158769283318620}
   - {fileID: 9020184986697725232}
-  - {fileID: 8342731691831234949}
+  - {fileID: 5206895273880294847}
   - {fileID: 7497383018830012468}
   - {fileID: 7442617611914313316}
   - {fileID: -1025905340561916859}
@@ -1999,6 +2019,26 @@ MonoBehaviour:
   version: 0.0.1
   featureIdInternal: com.unity.openxr.feature.conformance
   openxrExtensionStrings: XR_EXT_conformance_automation
+  company: Unity
+  priority: 0
+  required: 0
+--- !u!114 &5206895273880294847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 0}
+  m_Name: MetaHandTrackingAim Android
+  m_EditorClassIdentifier: Unity.XR.Hands:UnityEngine.XR.Hands.OpenXR:MetaHandTrackingAim
+  m_enabled: 0
+  nameUi: Meta Hand Tracking Aim
+  version: 0.0.1
+  featureIdInternal: com.unity.openxr.feature.input.metahandtrackingaim
+  openxrExtensionStrings: XR_FB_hand_tracking_aim
   company: Unity
   priority: 0
   required: 0
