@@ -8,6 +8,7 @@ public class UserFacingTracker : MonoBehaviour
     [SerializeField] private TextMeshProUGUI angleDebugText;
     [SerializeField] private TextMeshProUGUI lastEventText;
     [SerializeField] private TextMeshProUGUI responseText;
+    [SerializeField] private TextMeshProUGUI gaugeValuesText;
     [SerializeField] private Camera arCamera;
     [SerializeField] private EmotionModel emotionModel;
 
@@ -121,6 +122,10 @@ public class UserFacingTracker : MonoBehaviour
         {
             lastEventText.text = $"Last Event: {emotionModel.LastTriggeredEvent}";
             responseText.text = $"Response: {emotionModel.LastDisplayString}";
+            if (gaugeValuesText != null)
+            {
+                gaugeValuesText.text = $"T:{emotionModel.TouchGauge:F0} R:{emotionModel.RestGauge:F0} S:{emotionModel.SocialGauge:F0} H:{emotionModel.HungerGauge:F0}";
+            }
         }
 
         // Draw debug ray if enabled

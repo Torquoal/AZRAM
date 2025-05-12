@@ -27,6 +27,7 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] private bool showDebugLogs = true;
     [SerializeField] private bool useAcceleratedTesting = false;
     [SerializeField] private bool usePersistentEmotions = true;  // Toggle for persistent emotions
+    [SerializeField] private bool randomizeMoodOnStart = true;  // Toggle for mood randomization
     [SerializeField] private float testingMultiplier = 180f; // Speed up time for testing
 
     [Header("Response Settings")]
@@ -95,6 +96,12 @@ public class EmotionModel : MonoBehaviour
     [SerializeField] [Range(0, 100)] private float restGauge = 50f;
     [SerializeField] [Range(0, 100)] private float socialGauge = 50f;
     [SerializeField] [Range(0, 100)] private float hungerGauge = 50f;
+
+    // Public properties to expose gauge values
+    public float TouchGauge => touchGauge;
+    public float RestGauge => restGauge;
+    public float SocialGauge => socialGauge;
+    public float HungerGauge => hungerGauge;
 
     [Header("Need Thresholds")]
     [SerializeField] [Range(0, 100)] private float touchFulfilled = 70f;
@@ -181,16 +188,24 @@ public class EmotionModel : MonoBehaviour
         currentTemperament = classifyEmotionalState(longTermValence, longTermArousal);
         Debug.Log($"Current emotional state on wakeup: {currentTemperament}");
 
-        // calculate this session's mood 
-        moodValence = longTermValence + UnityEngine.Random.Range(-5f, 5f);
-        moodArousal = longTermArousal + UnityEngine.Random.Range(-5f, 5f);
+        // calculate this session's mood with optional randomization
+        if (randomizeMoodOnStart)
+        {
+            moodValence = longTermValence + UnityEngine.Random.Range(-5f, 5f);
+            moodArousal = longTermArousal + UnityEngine.Random.Range(-5f, 5f);
+        }
+        else
+        {
+            moodValence = longTermValence;
+            moodArousal = longTermArousal;
+        }
 
         // Clamp mood values
         moodValence = Mathf.Clamp(moodValence, -10f, 10f);
         moodArousal = Mathf.Clamp(moodArousal, -10f, 10f);
 
         currentMood = classifyEmotionalState(moodValence, moodArousal);
-        Debug.Log($"Current mood on wakeup: {currentMood}");
+        Debug.Log($"Current mood on wakeup: {currentMood} (randomization: {(randomizeMoodOnStart ? "enabled" : "disabled")})");
 
         Debug.Log($"Emotion Model: Mood on wakeup: V: {moodValence}, A: {moodArousal}");
 

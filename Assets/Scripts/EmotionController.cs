@@ -172,6 +172,13 @@ public class EmotionController : MonoBehaviour
         if (showDebugText)
             Debug.Log($"Checking special display overrides for: {triggerEvent}");
 
+        // Stop any existing thought bubble reset coroutine
+        if (resetCoroutine != null)
+        {
+            StopCoroutine(resetCoroutine);
+            resetCoroutine = null;
+        }
+
         // Handle special display overrides
         switch (triggerEvent.ToLower())
         {
@@ -245,7 +252,7 @@ public class EmotionController : MonoBehaviour
         }
 
         // Only start auto-reset if not asleep
-        if (!emotionModel.IsAsleep && resetCoroutine == null)
+        if (!emotionModel.IsAsleep)
         {
             resetCoroutine = StartCoroutine(AutoResetThoughtBubble());
         }
