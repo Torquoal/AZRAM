@@ -11,6 +11,7 @@ public class UserFacingTracker : MonoBehaviour
     [SerializeField] private TextMeshProUGUI gaugeValuesText;
     [SerializeField] private Camera arCamera;
     [SerializeField] private EmotionModel emotionModel;
+    [SerializeField] private EmotionController emotionController;
 
     [Header("Debug Settings")]
     [SerializeField] private bool showDebugRay = true;
@@ -82,7 +83,8 @@ public class UserFacingTracker : MonoBehaviour
             if (sustainedLookTimer >= requiredLookDuration && sceneController.wakeUpComplete && !hasShown)
             {
                 Debug.Log("UserFacingTracker Gaze on Qoobo Conditions Met");
-                sceneController.ShowThought("looking");
+                var response = emotionModel.CalculateEmotionalResponse("LookingTowards");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 hasShown = true;
             }
         }
@@ -110,8 +112,8 @@ public class UserFacingTracker : MonoBehaviour
             if (lookAwayTimer >= lookAwayDuration && sceneController.wakeUpComplete && !hasPlayedLookAway)
             {
                 Debug.Log($"User has been looking away (angle: {angleToQoobo:F1}°) for {lookAwayTimer:F1}s");
-                sceneController.PlaySound("sad");
-                sceneController.ShowThought("looking");
+                var response = emotionModel.CalculateEmotionalResponse("LookingAway");
+                emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
                 hasPlayedLookAway = true;
             }
         }

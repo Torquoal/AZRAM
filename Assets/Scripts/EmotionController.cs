@@ -249,6 +249,12 @@ public class EmotionController : MonoBehaviour
             case "touchheard":
                 sceneController.ShowThought("hand");
                 break;
+            case "lookingaway":
+                sceneController.ShowThought("eyes");
+                break;
+            case "lookingtowards":
+                sceneController.ShowThought("eyes");
+                break;
         }
 
         // Only start auto-reset if not asleep

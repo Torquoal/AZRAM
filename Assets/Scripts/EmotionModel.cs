@@ -88,7 +88,9 @@ public class EmotionModel : MonoBehaviour
         { "AngryHeard", new EmotionalResponseValues { Valence = -8f, Arousal = 3f, Touch = 0f, Rest = 0f, Social = 2f } },
         { "FarewellHeard", new EmotionalResponseValues { Valence = -2f, Arousal = -2f, Touch = 0f, Rest = 0f, Social = 3f } },
         { "PraiseHeard", new EmotionalResponseValues { Valence = 10f, Arousal = 5f, Touch = 0f, Rest = 0f, Social = 5f } },
-        { "TouchHeard", new EmotionalResponseValues { Valence = 3f, Arousal = 2f, Touch = 3f, Rest = 0f, Social = 2f } }
+        { "TouchHeard", new EmotionalResponseValues { Valence = 3f, Arousal = 2f, Touch = 3f, Rest = 0f, Social = 2f } },
+        { "LookingAway", new EmotionalResponseValues { Valence = -6f, Arousal = -2f, Touch = 0f, Rest = 0f, Social = -4f } },
+        { "LookingTowards", new EmotionalResponseValues { Valence = 4f, Arousal = 3f, Touch = 0f, Rest = 0f, Social = 4f } }
     };
 
     [Header("Need Values")]
