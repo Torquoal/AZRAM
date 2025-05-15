@@ -42,6 +42,7 @@ public class SceneController : MonoBehaviour
         if (strokeDetector != null)
         {
             strokeDetector.OnStrokeDetected += HandleStrokeDetected;
+            strokeDetector.OnHoldDetected += HandleHoldDetected;  // Subscribe to hold events
         }
     }
     void OnDestroy()
@@ -50,6 +51,7 @@ public class SceneController : MonoBehaviour
         if (strokeDetector != null)
         {
             strokeDetector.OnStrokeDetected -= HandleStrokeDetected;
+            strokeDetector.OnHoldDetected -= HandleHoldDetected;  // Unsubscribe from hold events
         }
     }
     private void HandleStrokeDetected(StrokeDetector.StrokeDirection direction)
@@ -88,6 +90,22 @@ public class SceneController : MonoBehaviour
                 Debug.Log($"Unhandled stroke direction: {direction}");
                 break;
         }
+    }
+
+    private void HandleHoldDetected()
+    {
+        if (isWakingUp) return;
+        
+        // If asleep, don't respond to holds
+        if (emotionModel.IsAsleep)
+        {
+            Debug.Log("Hold detected but robot is asleep");
+            return;
+        }
+
+        Debug.Log("Hold detected - calculating emotional response");
+        var response = emotionModel.CalculateEmotionalResponse("BeingHeld");
+        emotionController.TryDisplayEmotion(response.EmotionToDisplay, response.TriggerEvent);
     }
     /*
     ** DISTANCE CONTROL
