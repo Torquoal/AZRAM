@@ -1,5 +1,8 @@
 # AZRAM
 
+<b>Click below to watch the video</b>
+[![Watch the video](https://img.youtube.com/vi/SVHohefeliU/maxresdefault.jpg)](https://youtu.be/SVHohefeliU)
+
 ## Project Overview
 AZRAM is an interactive robot companion project designed for use with Meta Quest 3 and Unity. The robot responds to hand gestures, voice, and environmental cues, displaying a range of emotional states and behaviors.
 
