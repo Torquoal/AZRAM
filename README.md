@@ -88,6 +88,4 @@ Controls the robot's tail animations using an Animator. Plays different tail mov
 ## VoiceDetector.cs
 Handles voice recognition and loudness detection. Uses Vosk for speech-to-text, matches recognized words to emotional events, and triggers emotional responses. Also detects loud sounds for surprise reactions.
 
-## TransformLocker.cs
-Locks the position, rotation, and/or scale of a GameObject to its initial values, preventing unwanted movement or transformation.
 
