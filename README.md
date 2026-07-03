@@ -107,8 +107,13 @@ The study produced several important insights into the design of affective robot
 ### Installation
 
 git clone https://github.com/Torquoal/AZRA-Augmenting-Zoomorphic-Robotics-with-Affect.git
+
 Open the project in Unity
+
 Download appropriate editor version
+
 Ensure XR plugins and dependencies are installed
+
 Configure your AR headset (e.g., enable developer mode, Quest Link)
+
 Connect the headset to your machine
